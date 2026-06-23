@@ -14,3 +14,23 @@ Vec2::Vec2() : x(0.0f), y(0.0f) {}
 //}
 
 //============================================
+//带参构造函数实现
+Vec2::Vec2(float xValue, float yValue) : x(xValue), y(yValue) {}
+
+//============================================
+//向量加法实现
+Vec2 Vec2::Add(const Vec2& other) const {
+	return Vec2(x + other.x, y + other.y);
+}
+
+//============================================
+//向量减法实现
+Vec2 Vec2::Subtract(const Vec2& other) const {
+	return Vec2(x - other.x, y - other.y);
+}
+
+//============================================
+//向量乘法实现
+Vec2 Vec2::Multiply(float scalar) const {
+	return Vec2(x * scalar, y * scalar);
+}
