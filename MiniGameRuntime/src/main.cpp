@@ -1,5 +1,6 @@
 #include <iostream>
 #include "Math/Vec2.h"
+#include "Components/TransformComponent.h"
 
 using namespace std;
 
@@ -20,6 +21,8 @@ int main() {
     cout << "d.x:" << d.x << " " << "d.y:" << d.y << endl;
     cout << "e.x:" << e.x << " " << "e.y:" << e.y << endl;
     cout << "g.x:" << g.x << " " << "g.y:" << g.y << endl;
+
+
 
     return 0;
 }
