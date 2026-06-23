@@ -19,18 +19,18 @@ Vec2::Vec2(float xValue, float yValue) : x(xValue), y(yValue) {}
 
 //============================================
 //向量加法实现
-Vec2 Vec2::Add(const Vec2& other) const {
+Vec2 Vec2::operator+(const Vec2& other) const {
 	return Vec2(x + other.x, y + other.y);
 }
 
 //============================================
 //向量减法实现
-Vec2 Vec2::Subtract(const Vec2& other) const {
+Vec2 Vec2::operator-(const Vec2& other) const {
 	return Vec2(x - other.x, y - other.y);
 }
 
 //============================================
 //向量乘法实现
-Vec2 Vec2::Multiply(float scalar) const {
+Vec2 Vec2::operator*(float scalar) const {
 	return Vec2(x * scalar, y * scalar);
 }
