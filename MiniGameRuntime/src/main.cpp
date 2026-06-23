@@ -1,5 +1,5 @@
 #include <iostream>
-#include "Vec2.h"
+#include "Math/Vec2.h"
 
 using namespace std;
 

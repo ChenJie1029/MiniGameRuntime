@@ -21,14 +21,14 @@ add_executable(MiniGameRuntime
     MiniGameRuntime.cpp
     src/main.cpp
     src/Vec2.cpp
-)
+ )
 
 # ============================================
 # 5. 指定头文件搜索路径
 # ============================================
 target_include_directories(MiniGameRuntime PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}        # 根目录（找 MiniGameRuntime.h）
-    ${CMAKE_CURRENT_SOURCE_DIR}/src    # src 目录（找 Vec2.h）
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 # ============================================
