@@ -21,7 +21,9 @@ add_executable(MiniGameRuntime
     MiniGameRuntime.cpp
     src/main.cpp
     src/Vec2.cpp
- )
+    src/TransformComponent.cpp
+    src/VelocityComponent.cpp
+  "include/Components/VelocityComponent.h" "src/TransformComponent.cpp" "src/VelocityComponent.cpp")
 
 # ============================================
 # 5. 指定头文件搜索路径

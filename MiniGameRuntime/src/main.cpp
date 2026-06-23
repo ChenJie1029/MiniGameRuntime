@@ -1,6 +1,7 @@
 #include <iostream>
 #include "Math/Vec2.h"
 #include "Components/TransformComponent.h"
+#include "Components/VelocityComponent.h"
 
 using namespace std;
 
@@ -22,7 +23,15 @@ int main() {
     cout << "e.x:" << e.x << " " << "e.y:" << e.y << endl;
     cout << "g.x:" << g.x << " " << "g.y:" << g.y << endl;
 
+    //===========================================================
+    //实现对象可以根据速度变更位置
+    TransformComponent transform(Vec2(0.0f, 0.0f));
+    VelocityComponent Velocity(Vec2(1.0f, 2.0f));
 
+    float deltaTime = 0.016f;
+    transform.position = transform.position + Velocity.velocity * deltaTime;
+
+    cout << "X:" << transform.position.x << " " << "Y:" << transform.position.y << endl;
 
     return 0;
 }
