@@ -70,5 +70,13 @@ int main() {
 
     cout << "一共有" << entityManager.GetEntityCount() << "个角色" << endl;
 
+    //===========================================================
+    cout << "===========================================================" << endl;
+    cout << "--- 触发安全边界测试 ---" << endl;
+    entityManager.DestroyEntity(INVALID_ENTITY); //删除无效实体
+    entityManager.DestroyEntity(player); //正常删除
+    entityManager.DestroyEntity(player); //重复删除
+    entityManager.DestroyEntity(9999); //删除一个根本不存在的野数字
+
     return 0;
 }
