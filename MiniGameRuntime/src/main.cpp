@@ -63,5 +63,12 @@ int main() {
     cout << "Enemy1 is alive now? " << (entityManager.IsAlive(enemy1) ? "Yes" : "No") << endl;
     cout << "Player is alive now? " << (entityManager.IsAlive(player) ? "Yes" : "No") << endl;
 
+    //创建1000个Entity
+    for (int i = 0; i < 1000; i++) {
+        entityManager.CreateEntity();
+    }
+
+    cout << "一共有" << entityManager.GetEntityCount() << "个角色" << endl;
+
     return 0;
 }
