@@ -118,5 +118,12 @@ int main() {
     cout << "Player updated pos: (" << updatedTransform.position.x
         << ", " << updatedTransform.position.y << ")" << endl;
 
+    //创建100个带 Transform 和 Velocity 的实体
+    /*for (int i = 0; i < 100; i++) {
+        Entity entity = world.CreateEntity();
+        world.AddTransform(entity, TransformComponent(Vec2(float(i), 0.0f)));
+        world.AddVelocity(entity, VelocityComponent(Vec2(1.0f, 2.0f)));
+    }*/
+
     return 0;
 }
