@@ -95,10 +95,19 @@ int main() {
     world.AddTransform(player2, initialTransform);
     cout << "Successfully added TransformComponent to Player." << endl;
 
+    // 现场创建 initialVelocity 结构体，并塞进速度账本
+    VelocityComponent initialVelocity(Vec2(5.0f, -2.0f));
+    world.AddVelocity(player2, initialVelocity);
+
     // 获取并打印当前位置
     TransformComponent& playerTransform = world.GetTransform(player2);
     cout << "Player current pos: (" << playerTransform.position.x
         << ", " << playerTransform.position.y << ")" << endl;
+
+    // 获取并打印当前速度
+    VelocityComponent& playerVelocity = world.GetVelocity(player2);
+    cout << "Player current velocity: (" << playerVelocity.velocity.x
+        << ", " << playerVelocity.velocity.y << ")" << endl;
 
     // 尝试在外部直接修改它的位置数据
     playerTransform.position.x = 55.5f;
