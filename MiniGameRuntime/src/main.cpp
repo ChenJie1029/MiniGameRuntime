@@ -3,6 +3,7 @@
 #include "Components/TransformComponent.h"
 #include "Components/VelocityComponent.h"
 #include "Core/EntityManager.h"
+#include "Core/World.h"
 
 using namespace std;
 
@@ -77,6 +78,36 @@ int main() {
     entityManager.DestroyEntity(player); //正常删除
     entityManager.DestroyEntity(player); //重复删除
     entityManager.DestroyEntity(9999); //删除一个根本不存在的野数字
+
+    //===========================================================
+    cout << "===========================================================" << endl;
+    cout << "--- World类测试 ---" << endl;
+    World world;
+
+    // 用world类创建实体
+    Entity player2 = world.CreateEntity();
+    cout << "Created Player Entity with ID: " << player << endl;
+
+    // 初始位置定在 (10.0, 20.0)
+    TransformComponent initialTransform(Vec2(10.0f, 20.0f));
+
+    // 通过 World 将实体和位置组件关联
+    world.AddTransform(player2, initialTransform);
+    cout << "Successfully added TransformComponent to Player." << endl;
+
+    // 获取并打印当前位置
+    TransformComponent& playerTransform = world.GetTransform(player2);
+    cout << "Player current pos: (" << playerTransform.position.x
+        << ", " << playerTransform.position.y << ")" << endl;
+
+    // 尝试在外部直接修改它的位置数据
+    playerTransform.position.x = 55.5f;
+    playerTransform.position.y = 88.8f;
+
+    // 再次从世界中获取，验证账本里的是否也跟着变了
+    TransformComponent& updatedTransform = world.GetTransform(player2);
+    cout << "Player updated pos: (" << updatedTransform.position.x
+        << ", " << updatedTransform.position.y << ")" << endl;
 
     return 0;
 }
