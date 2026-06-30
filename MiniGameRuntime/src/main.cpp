@@ -125,5 +125,24 @@ int main() {
         world.AddVelocity(entity, VelocityComponent(Vec2(1.0f, 2.0f)));
     }*/
 
+    //===========================================================
+    cout << "===========================================================" << endl;
+    cout << "--- Game Loop & World Update Simulation ---" << endl;
+    Entity player3 = world.CreateEntity();
+    world.AddTransform(player3, TransformComponent(Vec2(0.0f, 0.0f)));
+    world.AddVelocity(player3, VelocityComponent(Vec2(10.0f, 5.0f)));
+
+    // 模拟游戏主循环(Game Loop)，跑 5 帧
+    // float deltaTime = 0.016f;真实的值
+    deltaTime = 1.0f; // 假设每帧雷打不动过去 1 秒
+
+    for (int frame = 1; frame <= 5; frame++) {
+        world.Update(deltaTime);
+
+        TransformComponent& pTrans = world.GetTransform(player3);
+        cout << "[Frame " << frame << "] Player3 Pos: ("
+            << pTrans.position.x << ", " << pTrans.position.y << ")" << endl;
+    }
+
     return 0;
 }

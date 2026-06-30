@@ -50,3 +50,20 @@ VelocityComponent& World::GetVelocity(Entity entity) {
 bool World::HasVelocity(Entity entity) const {
 	return m_velocityComponents.find(entity) != m_velocityComponents.end();
 }
+
+void World::Update(float deltaTime) {
+	// 遍历位置账本中的每一个实体
+	for (auto& pair : m_transformComponents) {
+		Entity entity = pair.first;
+
+		//安全检查，要求实体同时拥有速度属性
+		if (HasVelocity(entity)) {
+			TransformComponent& trans = pair.second;
+			const VelocityComponent& vel = m_velocityComponents[entity];
+
+			// 位置 = 位置 + 速度 * 时间
+			trans.position.x += vel.velocity.x * deltaTime;
+			trans.position.y += vel.velocity.y * deltaTime;
+		}
+	}
+}
