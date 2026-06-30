@@ -3,8 +3,6 @@
 #include <vector>
 #include "Common/Entity.h"
 
-using namespace std;
-
 class EntityManager {
 public:
 	EntityManager(); //构造函数
@@ -19,5 +17,5 @@ public:
 
 private:
 	Entity m_nextEntityID; //记录下一个可用的 ID
-	vector<Entity> m_livingEntities; //存放当前所有存活实体的名册
+	std::vector<Entity> m_livingEntities; //存放当前所有存活实体的名册
 };

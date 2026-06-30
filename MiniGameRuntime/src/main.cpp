@@ -5,10 +5,8 @@
 #include "Core/EntityManager.h"
 #include "Core/World.h"
 
-using namespace std;
-
 int main() {
-    cout << "MiniGameRuntime started." << endl;
+    std::cout << "MiniGameRuntime started." << std::endl;
 
     //调用带参构造函数创建a, b
     Vec2 a(1.0f, 2.0f);
@@ -20,10 +18,10 @@ int main() {
     Vec2 e = a * 2.5f;
     Vec2 g = a + b * 3.5f;
 
-    cout << "c.x:" << c.x << " " << "c.y:" << c.y << endl;
-    cout << "d.x:" << d.x << " " << "d.y:" << d.y << endl;
-    cout << "e.x:" << e.x << " " << "e.y:" << e.y << endl;
-    cout << "g.x:" << g.x << " " << "g.y:" << g.y << endl;
+    std::cout << "c.x:" << c.x << " " << "c.y:" << c.y << std::endl;
+    std::cout << "d.x:" << d.x << " " << "d.y:" << d.y << std::endl;
+    std::cout << "e.x:" << e.x << " " << "e.y:" << e.y << std::endl;
+    std::cout << "g.x:" << g.x << " " << "g.y:" << g.y << std::endl;
 
     //===========================================================
     //实现对象可以根据速度变更位置
@@ -33,10 +31,10 @@ int main() {
     float deltaTime = 0.016f;
     transform.position = transform.position + Velocity.velocity * deltaTime;
 
-    cout << "X:" << transform.position.x << " " << "Y:" << transform.position.y << endl;
+    std::cout << "X:" << transform.position.x << " " << "Y:" << transform.position.y << std::endl;
 
     //===========================================================
-    cout << "===========================================================" << endl;
+    std::cout << "===========================================================" << std::endl;
     //创建实体 
     EntityManager entityManager; //实例化我们的户籍管理局（EntityManager）
 
@@ -45,55 +43,55 @@ int main() {
     Entity enemy2 = entityManager.CreateEntity();
 
     // 打印它们各自拿到的唯一 ID 编号
-    cout << "Player Entity ID: " << player << endl;
-    cout << "Enemy1 Entity ID: " << enemy1 << endl;
-    cout << "Enemy2 Entity ID: " << enemy2 << endl;
+    std::cout << "Player Entity ID: " << player << std::endl;
+    std::cout << "Enemy1 Entity ID: " << enemy1 << std::endl;
+    std::cout << "Enemy2 Entity ID: " << enemy2 << std::endl;
 
     //输出当前存活的数量
-    cout << "Living entity count =" << entityManager.GetEntityCount() << endl;
+    std::cout << "Living entity count =" << entityManager.GetEntityCount() << std::endl;
 
     //检查 enemy1 当前是否活着
-    cout << "Enemy1 is alive? " << (entityManager.IsAlive(enemy1) ? "Yes" : "No") << endl;
+    std::cout << "Enemy1 is alive? " << (entityManager.IsAlive(enemy1) ? "Yes" : "No") << std::endl;
 
     //干掉 enemy1
-    cout << "Destroying Enemy1..." << endl;
+    std::cout << "Destroying Enemy1..." << std::endl;
     entityManager.DestroyEntity(enemy1);
 
     // 再次检查数量和存活状态
-    cout << "Living entity count = " << entityManager.GetEntityCount() << endl;
-    cout << "Enemy1 is alive now? " << (entityManager.IsAlive(enemy1) ? "Yes" : "No") << endl;
-    cout << "Player is alive now? " << (entityManager.IsAlive(player) ? "Yes" : "No") << endl;
+    std::cout << "Living entity count = " << entityManager.GetEntityCount() << std::endl;
+    std::cout << "Enemy1 is alive now? " << (entityManager.IsAlive(enemy1) ? "Yes" : "No") << std::endl;
+    std::cout << "Player is alive now? " << (entityManager.IsAlive(player) ? "Yes" : "No") << std::endl;
 
     //创建1000个Entity
     for (int i = 0; i < 1000; i++) {
         entityManager.CreateEntity();
     }
 
-    cout << "一共有" << entityManager.GetEntityCount() << "个角色" << endl;
+    std::cout << "一共有" << entityManager.GetEntityCount() << "个角色" << std::endl;
 
     //===========================================================
-    cout << "===========================================================" << endl;
-    cout << "--- 触发安全边界测试 ---" << endl;
+    std::cout << "===========================================================" << std::endl;
+    std::cout << "--- 触发安全边界测试 ---" << std::endl;
     entityManager.DestroyEntity(INVALID_ENTITY); //删除无效实体
     entityManager.DestroyEntity(player); //正常删除
     entityManager.DestroyEntity(player); //重复删除
     entityManager.DestroyEntity(9999); //删除一个根本不存在的野数字
 
     //===========================================================
-    cout << "===========================================================" << endl;
-    cout << "--- World类测试 ---" << endl;
+    std::cout << "===========================================================" << std::endl;
+    std::cout << "--- World类测试 ---" << std::endl;
     World world;
 
     // 用world类创建实体
     Entity player2 = world.CreateEntity();
-    cout << "Created Player Entity with ID: " << player << endl;
+    std::cout << "Created Player Entity with ID: " << player << std::endl;
 
     // 初始位置定在 (10.0, 20.0)
     TransformComponent initialTransform(Vec2(10.0f, 20.0f));
 
     // 通过 World 将实体和位置组件关联
     world.AddTransform(player2, initialTransform);
-    cout << "Successfully added TransformComponent to Player." << endl;
+    std::cout << "Successfully added TransformComponent to Player." << std::endl;
 
     // 现场创建 initialVelocity 结构体，并塞进速度账本
     VelocityComponent initialVelocity(Vec2(5.0f, -2.0f));
@@ -101,13 +99,13 @@ int main() {
 
     // 获取并打印当前位置
     TransformComponent& playerTransform = world.GetTransform(player2);
-    cout << "Player current pos: (" << playerTransform.position.x
-        << ", " << playerTransform.position.y << ")" << endl;
+    std::cout << "Player current pos: (" << playerTransform.position.x
+        << ", " << playerTransform.position.y << ")" << std::endl;
 
     // 获取并打印当前速度
     VelocityComponent& playerVelocity = world.GetVelocity(player2);
-    cout << "Player current velocity: (" << playerVelocity.velocity.x
-        << ", " << playerVelocity.velocity.y << ")" << endl;
+    std::cout << "Player current velocity: (" << playerVelocity.velocity.x
+        << ", " << playerVelocity.velocity.y << ")" << std::endl;
 
     // 尝试在外部直接修改它的位置数据
     playerTransform.position.x = 55.5f;
@@ -115,8 +113,8 @@ int main() {
 
     // 再次从世界中获取，验证账本里的是否也跟着变了
     TransformComponent& updatedTransform = world.GetTransform(player2);
-    cout << "Player updated pos: (" << updatedTransform.position.x
-        << ", " << updatedTransform.position.y << ")" << endl;
+    std::cout << "Player updated pos: (" << updatedTransform.position.x
+        << ", " << updatedTransform.position.y << ")" << std::endl;
 
     //创建100个带 Transform 和 Velocity 的实体
     /*for (int i = 0; i < 100; i++) {
@@ -126,8 +124,8 @@ int main() {
     }*/
 
     //===========================================================
-    cout << "===========================================================" << endl;
-    cout << "--- Game Loop & World Update Simulation ---" << endl;
+    std::cout << "===========================================================" << std::endl;
+    std::cout << "--- Game Loop & World Update Simulation ---" << std::endl;
     Entity player3 = world.CreateEntity();
     world.AddTransform(player3, TransformComponent(Vec2(0.0f, 0.0f)));
     world.AddVelocity(player3, VelocityComponent(Vec2(10.0f, 5.0f)));
@@ -140,8 +138,8 @@ int main() {
         world.Update(deltaTime);
 
         TransformComponent& pTrans = world.GetTransform(player3);
-        cout << "[Frame " << frame << "] Player3 Pos: ("
-            << pTrans.position.x << ", " << pTrans.position.y << ")" << endl;
+        std::cout << "[Frame " << frame << "] Player3 Pos: ("
+            << pTrans.position.x << ", " << pTrans.position.y << ")" << std::endl;
     }
 
     return 0;

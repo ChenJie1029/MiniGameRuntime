@@ -6,7 +6,7 @@ Entity World::CreateEntity() {
 	return m_entityManager.CreateEntity();
 }
 
-void World::DestoryEntity(Entity entity) {
+void World::DestroyEntity(Entity entity) {
 	m_entityManager.DestroyEntity(entity);
 	m_transformComponents.erase(entity); //如果这个实体被毁灭了，它在位置账本里的数据也必须一并注销
 	m_velocityComponents.erase(entity);
@@ -21,7 +21,7 @@ void World::AddTransform(Entity entity, const TransformComponent& component) {
 TransformComponent& World::GetTransform(Entity entity) {
 	auto it = m_transformComponents.find(entity);
 	if (it == m_transformComponents.end()) {
-		throw runtime_error("[ECS Error] Entity does not have a TransformComponent!");
+		throw std::runtime_error("[ECS Error] Entity does not have a TransformComponent!");
 	}
 
 	return it->second;
@@ -41,7 +41,7 @@ void World::AddVelocity(Entity entity, const VelocityComponent& component) {
 VelocityComponent& World::GetVelocity(Entity entity) {
 	auto it = m_velocityComponents.find(entity);
 	if (it == m_velocityComponents.end()) {
-		throw runtime_error("[ECS Error] Entity does not have a VelocityComponent!");
+		throw std::runtime_error("[ECS Error] Entity does not have a VelocityComponent!");
 	}
 
 	return it->second;

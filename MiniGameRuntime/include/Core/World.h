@@ -9,7 +9,7 @@
 class World {
 public:
 	Entity CreateEntity();
-	void DestoryEntity(Entity entity);
+	void DestroyEntity(Entity entity);
 
 	// 位置组件接口
 	void AddTransform(Entity entity, const TransformComponent& component); //创建实体并带有TransformComponent属性
@@ -28,8 +28,8 @@ private:
 	EntityManager m_entityManager;
 
 	// 位置组件大账本：Entity ID->TransformComponent
-	unordered_map<Entity, TransformComponent> m_transformComponents;
+	std::unordered_map<Entity, TransformComponent> m_transformComponents;
 
 	// 账本 2：Entity ID -> 速度组件
-	unordered_map<Entity, VelocityComponent> m_velocityComponents;
+	std::unordered_map<Entity, VelocityComponent> m_velocityComponents;
 };

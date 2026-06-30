@@ -1,8 +1,6 @@
 #pragma once
 #include <cstdint>
 
-using namespace std;
-
 // 给 uint32_t 起一个别名叫 Entity，让代码可读性更强
 using Entity = uint32_t;
 

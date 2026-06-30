@@ -29,12 +29,12 @@ bool EntityManager::IsAlive(Entity entity) const {
 void EntityManager::DestroyEntity(Entity entity) {
 	// 不能删除无效的 Entity
 	if (entity == INVALID_ENTITY) {
-		cout << "[Warning] Attempted to destroy INVALID_ENTITY. Ignored." << endl;
+		std::cout << "[Warning] Attempted to destroy INVALID_ENTITY. Ignored." << std::endl;
 		return;
 	}
 	// 不能重复删除（如果当前不存活，直接拦截
 	if (!IsAlive(entity)) {
-		cout << "[Warning] Attempted to destroy a non-existent or already destroyed Entity:" << entity << ". Ignored." << endl;
+		std::cout << "[Warning] Attempted to destroy a non-existent or already destroyed Entity:" << entity << ". Ignored." << std::endl;
 		return;
 	}
 
