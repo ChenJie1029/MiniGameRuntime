@@ -4,6 +4,7 @@
 #include "Components/VelocityComponent.h"
 #include "Core/EntityManager.h"
 #include "Core/World.h"
+#include "Physics/PhysicsUtils.h"
 
 int main() {
     std::cout << "MiniGameRuntime started." << std::endl;
@@ -141,6 +142,45 @@ int main() {
         std::cout << "[Frame " << frame << "] Player3 Pos: ("
             << pTrans.position.x << ", " << pTrans.position.y << ")" << std::endl;
     }
+
+    //===========================================================
+    std::cout << "===========================================================" << std::endl;
+    std::cout << "=== AABB Collision Real-Time Test ===" << std::endl;
+
+    Entity player4 = world.CreateEntity();
+    world.AddTransform(player4, TransformComponent(Vec2(0.0f, 0.0f)));
+    world.AddAABB(player4, AABBComponent(32.0f, 32.0f));
+
+    Entity enemy4 = world.CreateEntity();
+    world.AddTransform(enemy4, TransformComponent(Vec2(100.0f, 100.0f)));
+    world.AddAABB(enemy4, AABBComponent(32.0f, 32.0f));
+    // ==========================================
+    // 场景一测试：相隔很远
+    // ==========================================
+    std::cout << "\n--- Test 1: Entities are far apart ---" << std::endl;
+    // 顺着网线取出各自的位置和碰撞大小
+    TransformComponent& pTrans = world.GetTransform(player4);
+    AABBComponent& pAABB = world.GetAABB(player4);
+
+    TransformComponent& eTrans = world.GetTransform(enemy4);
+    AABBComponent& eAABB = world.GetAABB(enemy4);
+
+    bool isColliding1 = PhysicsUtils::CheckAABBCollision(
+        pTrans.position, pAABB.halfExtents,
+        eTrans.position, eAABB.halfExtents
+    );
+
+    std::cout << "Collision Status: " << (isColliding1 ? "💥 碰到!" : "🟢 没碰到") << std::endl;
+
+    // 场景二测试：相隔很近
+    // ==========================================
+    std::cout << "\n--- Test 2: Entities are far apart ---" << std::endl;
+    eTrans.position = Vec2(10.0f, 10.0f);
+    bool isColliding2 = PhysicsUtils::CheckAABBCollision(
+        pTrans.position, pAABB.halfExtents,
+        eTrans.position, eAABB.halfExtents
+    );
+    std::cout << "Collision Status: " << (isColliding2 ? "💥 碰到!" : "🟢 没碰到") << std::endl;
 
     return 0;
 }
