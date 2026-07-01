@@ -10,6 +10,7 @@ void World::DestroyEntity(Entity entity) {
 	m_entityManager.DestroyEntity(entity);
 	m_transformComponents.erase(entity); //如果这个实体被毁灭了，它在位置账本里的数据也必须一并注销
 	m_velocityComponents.erase(entity);
+	m_aabbComponents.erase(entity);
 }
 
 void World::AddTransform(Entity entity, const TransformComponent& component) {
@@ -49,6 +50,23 @@ VelocityComponent& World::GetVelocity(Entity entity) {
 
 bool World::HasVelocity(Entity entity) const {
 	return m_velocityComponents.find(entity) != m_velocityComponents.end();
+}
+
+void World::AddAABB(Entity entity, const AABBComponent& component) {
+	if (entity == INVALID_ENTITY) return;
+	m_aabbComponents[entity] = component;
+}
+
+AABBComponent& World::GetAABB(Entity entity) {
+	auto it = m_aabbComponents.find(entity);
+	if (it == m_aabbComponents.end()) {
+		throw std::runtime_error("[ECS Error] Entity does not have an AABBComponent!");
+	}
+	return it->second;
+}
+
+bool World::HasAABB(Entity entity) const {
+	return m_aabbComponents.find(entity) != m_aabbComponents.end();
 }
 
 void World::Update(float deltaTime) {

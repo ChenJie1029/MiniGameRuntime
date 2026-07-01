@@ -5,6 +5,7 @@
 #include "Core/EntityManager.h"
 #include "Components/TransformComponent.h"
 #include "Components/VelocityComponent.h"
+#include "Components/AABBComponent.h"
 
 class World {
 public:
@@ -21,6 +22,11 @@ public:
 	VelocityComponent& GetVelocity(Entity entity);
 	bool HasVelocity(Entity entity) const;
 
+	// 碰撞组件接口
+	void AddAABB(Entity entity, const AABBComponent& component);
+	AABBComponent& GetAABB(Entity entity);
+	bool HasAABB(Entity entity) const;
+
 	void Update(float deltaTime); // 世界更新心跳
 	// 每过去一帧，main 函数里的主循环就会调用一次 world.Update()，告诉世界：“时间又前进了，请更新你内部所有实体的状态！”
 
@@ -32,4 +38,7 @@ private:
 
 	// 账本 2：Entity ID -> 速度组件
 	std::unordered_map<Entity, VelocityComponent> m_velocityComponents;
+
+	// 3. 碰撞组件大账本：Entity ID -> AABBComponent
+	std::unordered_map<Entity, AABBComponent> m_aabbComponents;
 };
