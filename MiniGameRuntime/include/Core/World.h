@@ -41,4 +41,7 @@ private:
 
 	// 3. 碰撞组件大账本：Entity ID -> AABBComponent
 	std::unordered_map<Entity, AABBComponent> m_aabbComponents;
+
+	// 友元 特权通行证：允许 CollisionSystem 能够直接读取私有账本，进行批量物理计算
+	friend class CollisionSystem;
 };

@@ -25,7 +25,7 @@ add_executable(MiniGameRuntime
     src/TransformComponent.cpp
     src/VelocityComponent.cpp
     src/EntityManager.cpp
-    src/Core/World.cpp)
+    src/Core/World.cpp "include/Systems/CollisionSystem.h" "src/Systems/CollisionSystem.cpp")
 
 # ============================================
 # 5. 指定头文件搜索路径
