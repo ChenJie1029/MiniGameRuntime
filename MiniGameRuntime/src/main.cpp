@@ -5,6 +5,7 @@
 #include "Core/EntityManager.h"
 #include "Core/World.h"
 #include "Physics/PhysicsUtils.h"
+#include "Systems/CollisionSystem.h"
 
 int main() {
     std::cout << "MiniGameRuntime started." << std::endl;
@@ -181,6 +182,34 @@ int main() {
         eTrans.position, eAABB.halfExtents
     );
     std::cout << "Collision Status: " << (isColliding2 ? "💥 碰到!" : "🟢 没碰到") << std::endl;
+
+    //===========================================================5
+    std::cout << "===========================================================" << std::endl;
+    std::cout << "=== CollisionSystem Automated Batch Test ===" << std::endl;
+
+    Entity player5 = world.CreateEntity();
+    world.AddTransform(player5, TransformComponent(Vec2(0.0f, 0.0f)));
+    world.AddAABB(player5, AABBComponent(32.0f, 32.0f));
+
+    Entity enemy5 = world.CreateEntity();
+    world.AddTransform(enemy5, TransformComponent(Vec2(10.0f, 10.0f)));
+    world.AddAABB(enemy5, AABBComponent(32.0f, 32.0f));
+
+    Entity enemy6 = world.CreateEntity();
+    world.AddTransform(enemy6, TransformComponent(Vec2(100.0f, 100.0f)));
+    world.AddAABB(enemy6, AABBComponent(32.0f, 32.0f));
+
+    Entity wall = world.CreateEntity();
+    world.AddTransform(wall, TransformComponent(Vec2(0.0f, 20.0f)));
+    world.AddAABB(wall, AABBComponent(64.0f, 16.0f));
+
+    std::cout << "-> All 4 entities spawned and registered in World ledger." << std::endl;
+    std::cout << "\n--- CollisionSystem Scanning Start ---" << std::endl;
+
+    CollisionSystem collisionSystem;
+    collisionSystem.Update(world);
+
+    std::cout << "--- 🔍 Scan Finished ---" << std::endl;
 
     return 0;
 }
