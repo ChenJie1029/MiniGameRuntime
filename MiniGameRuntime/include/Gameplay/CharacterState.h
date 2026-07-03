@@ -17,3 +17,18 @@ public:
 	// 当准备离开这个状态的那一瞬间（比如离开移动状态，把跑步特效关掉）
 	virtual void Exit(Entity entity, CharacterStateMachine& fsm) = 0;
 };
+
+class IdleState : public CharacterState {
+public:
+	void Enter(Entity entity, CharacterStateMachine& fsm) override {
+		std::cout << "[IdleState] Entity [" << entity << "] entered IDLE state. (Breathing...)" << std::endl;
+	}
+
+	void Update(Entity entity, float deltaTime, CharacterStateMachine& fsm) override {
+
+	}
+
+	void Exit(Entity entity, CharacterStateMachine& fsm) {
+		std::cout << "[IdleState] Entity [" << entity << "] exiting IDLE state." << std::endl;
+	}
+};

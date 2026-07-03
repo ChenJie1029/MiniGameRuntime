@@ -7,23 +7,13 @@
 
 class CharacterStateMachine {
 public:
-	void Update(Entity entity, float deltaTime) {
-		if (m_currentState) {
-			m_currentState->Update(entity, deltaTime, *this);
-		}
-	}
+	CharacterStateMachine() = default;
 
-	void ChangeState(Entity entity, std::shared_ptr<CharacterState> newState) {
-		if (m_currentState) {
-			m_currentState->Exit(entity, *this);
-		}
+	void Update(Entity entity, float deltaTime);
 
-		m_currentState = newState;
+	void ChangeState(Entity entity, std::shared_ptr<CharacterState> newState);
 
-		if (m_currentState) {
-			m_currentState->Enter(entity, *this);
-		}
-	}
+	std::shared_ptr<CharacterState> GetCurrentState() const { return m_currentState; }
 
 private:
 	std::shared_ptr<CharacterState> m_currentState = nullptr; // 当前执掌大权的状态
