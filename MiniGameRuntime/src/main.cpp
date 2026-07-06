@@ -6,6 +6,7 @@
 #include "Core/World.h"
 #include "Physics/PhysicsUtils.h"
 #include "Systems/CollisionSystem.h"
+#include "Gameplay/CharacterStateMachine.h"
 
 int main() {
     std::cout << "MiniGameRuntime started." << std::endl;
@@ -210,6 +211,31 @@ int main() {
     collisionSystem.Update(world);
 
     std::cout << "--- 🔍 Scan Finished ---" << std::endl;
+
+    //===========================================================7
+    std::cout << "===========================================================" << std::endl;
+    std::cout << "=== Character State Machine Real-Time Test ===" << std::endl;
+
+    Entity player7 = world.CreateEntity();
+    std::cout << "-> Player Entity [" << player7 << "] created." << std::endl;
+
+    CharacterStateMachine playerFSM;
+
+    playerFSM.ChangeState(player7, std::make_shared<IdleState>());
+
+    // float deltaTime = 0.016f;
+    for (int frame = 1; frame <= 3; frame++) {
+        std::cout << "[Frame " << frame << "]" << std::endl;
+        playerFSM.Update(player7, deltaTime);
+    }
+
+    // 让玩家再次切换状态（触发 Exit -> Enter 的完整交接）
+    std::cout << "\n--- State Transition Test ---" << std::endl;
+    // 为了看到效果，我们让他重新切一次 IdleState（或者下周切 MoveState）
+    // 观察它会不会先触发老状态的 Exit，再触发新状态的 Enter
+    playerFSM.ChangeState(player7, std::make_shared<IdleState>());
+
+    std::cout << "\n=== Test Finished ===" << std::endl;
 
     return 0;
 }
