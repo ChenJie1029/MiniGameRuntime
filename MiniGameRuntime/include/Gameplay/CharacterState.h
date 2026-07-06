@@ -28,7 +28,23 @@ public:
 
 	}
 
-	void Exit(Entity entity, CharacterStateMachine& fsm) {
+	void Exit(Entity entity, CharacterStateMachine& fsm) override {
 		std::cout << "[IdleState] Entity [" << entity << "] exiting IDLE state." << std::endl;
+	}
+};
+
+class HitState : public CharacterState {
+public:
+	void Enter(Entity entity, CharacterStateMachine& fsm) override {
+		std::cout << "[HitState] 💥💥💥 Entity [" << entity << "] GOT HIT! Entering HIT state (Stunned!)" << std::endl;
+	}
+
+	void Update(Entity entity, float deltaTime, CharacterStateMachine& fsm) override {
+		// 受伤硬直状态下，角色动弹不得，什么都不干
+		// 以后我们可以在这里计时：if (过了0.5秒) { fsm.ChangeState(..., IdleState); }
+	}
+
+	void Exit(Entity entity, CharacterStateMachine& fsm) override {
+		std::cout << "[HitState] ❤️ Entity [" << entity << "] recovered from HIT state." << std::endl;
 	}
 };

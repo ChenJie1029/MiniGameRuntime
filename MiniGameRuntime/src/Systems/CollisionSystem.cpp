@@ -2,6 +2,7 @@
 #include <vector>
 #include "Systems/CollisionSystem.h"
 #include "Physics/PhysicsUtils.h"
+#include "Core/EventBus.h"
 
 void CollisionSystem::Update(World& world) {
 	// 自动化筛选：建立一个临时名单，把世界上所有同时有物理肉身(Transform)和碰撞体(AABB)的实体抓出
@@ -29,6 +30,11 @@ void CollisionSystem::Update(World& world) {
 			if (PhysicsUtils::CheckAABBCollision(posA, halfA, posB, halfB)) {
 				std::cout << "[CollisionSystem] 💥 Detected! Entity [" << entityA
 					<< "] collided with Entity [" << entityB << "]" << std::endl;
+				CollisionEvent newEvent;
+				newEvent.a = entityA;
+				newEvent.b = entityB;
+
+				EventBus::Publish(newEvent);
 			}
 		}
 	}
