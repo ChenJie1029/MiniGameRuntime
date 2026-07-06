@@ -7,6 +7,7 @@
 #include "Physics/PhysicsUtils.h"
 #include "Systems/CollisionSystem.h"
 #include "Gameplay/CharacterStateMachine.h"
+#include "Core/EventBus.h"
 
 int main() {
     std::cout << "MiniGameRuntime started." << std::endl;
@@ -219,6 +220,7 @@ int main() {
     Entity player7 = world.CreateEntity();
     std::cout << "-> Player Entity [" << player7 << "] created." << std::endl;
 
+    // 实例化玩家的状态机大管家
     CharacterStateMachine playerFSM;
 
     playerFSM.ChangeState(player7, std::make_shared<IdleState>());
@@ -234,6 +236,35 @@ int main() {
     // 为了看到效果，我们让他重新切一次 IdleState（或者下周切 MoveState）
     // 观察它会不会先触发老状态的 Exit，再触发新状态的 Enter
     playerFSM.ChangeState(player7, std::make_shared<IdleState>());
+
+    std::cout << "\n=== Test Finished ===" << std::endl;
+
+    //===========================================================8
+    std::cout << "===========================================================" << std::endl;
+    std::cout << "=== Engine Integration: EventBus & StateMachine Test ===" << std::endl;
+    Entity player8 = world.CreateEntity();
+    Entity monster8 = world.CreateEntity();
+    std::cout << "-> Created Player8 [" << player8 << "] and Monster8 [" << monster8 << "].\n" << std::endl;
+
+    // CharacterStateMachine playerFSM;  实例化玩家的状态机大管家
+
+    // 让大管家去电报局登记自己的门牌号！
+    EventBus::Subscribe(&playerFSM); // 因为大管家继承了 ICollisionListener，所以传入 &playerFSM（它的地址）是完全合法的
+    std::cout << "[System] PlayerFSM subscribed to EventBus." << std::endl;
+
+    // 开局让玩家进入 IdleState（站立发呆）
+    std::cout << "\n--- Game Start: Setting Player to IDLE ---" << std::endl;
+    playerFSM.ChangeState(player8, std::make_shared<IdleState>());
+
+    // 模拟第一帧：玩家安全，一切平静
+    std::cout << "\n--- Frame 1: Safe and Peaceful ---" << std::endl;
+    playerFSM.Update(player8, 0.016f);
+
+    // 模拟第二帧：物理系统突然检测到了碰撞！
+    std::cout << "\n--- Frame 2: Danger! Collision Happens! ---" << std::endl;
+    // CollisionSystem collisionSystem;  之前已经定义过了
+    // 驱动物理系统。物理系统内部会检测到碰撞，现场写电报，并通过 EventBus.Publish 广播出去
+    collisionSystem.Update(world);
 
     std::cout << "\n=== Test Finished ===" << std::endl;
 
