@@ -28,7 +28,7 @@ add_executable(MiniGameRuntime
     src/Core/World.cpp 
     src/Systems/CollisionSystem.cpp 
     src/Gameplay/CharacterStateMachine.cpp
-)
+ "include/Core/Event.h" "include/Core/EventBus.h" "src/Core/EventBus.cpp")
 
 # ============================================
 # 5. 指定头文件搜索路径
