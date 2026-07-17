@@ -25,6 +25,6 @@ namespace Hazel {
 			std::cout << "[ObjectPool] Initialized with capacity: " << initialCapacity << std::endl;
 		}
 
-		~ObjectPool() = default;
+		~ObjectPool() = default;//
 	};
 }
