@@ -13,5 +13,5 @@ namespace Hazel {
 		virtual void Reset() = 0;
 	};
 
-	
+	//
 }
