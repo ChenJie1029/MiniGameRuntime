@@ -8,6 +8,30 @@
 #include "Systems/CollisionSystem.h"
 #include "Gameplay/CharacterStateMachine.h"
 #include "Core/EventBus.h"
+#include "Core/ObjectPool.h"
+
+// ===========================================================9 编写一个具体的业务对象：子弹
+class Bullet : public Hazel::IPoolable {
+public:
+    float x = 0.0f;
+    float y = 0.0f;
+    bool active = false;
+
+    // 唤醒逻辑
+    void Init() override {
+        x = 0.0f;
+        y = 0.0f;
+        active = true;
+        std::cout << "  [Bullet] 子弹激活：坐标归零 (" << x << ", " << y << ")\n";
+    }
+
+    // 归还逻辑
+    void Reset() override {
+        active = false;
+        std::cout << "  [Bullet] 子弹进入休眠状态\n";
+    }
+};
+
 
 int main() {
     std::cout << "MiniGameRuntime started." << std::endl;
@@ -267,6 +291,30 @@ int main() {
     collisionSystem.Update(world);
 
     std::cout << "\n=== Test Finished ===" << std::endl;
+
+    //===========================================================9
+    std::cout << "===  Hazel 游戏引擎：对象池测试 ===\n\n";
+
+    // 创建一个容量为 3 的子弹池（堆内存预分配 3 个 Bullet）
+    Hazel::ObjectPool<Bullet> bulletPool(3);
+
+    std::cout << "\n--- 1. 借出子弹 ---\n";
+    Bullet* b1 = bulletPool.Acquire();
+    Bullet* b2 = bulletPool.Acquire();
+
+    std::cout << "\n--- 2. 修改子弹数据 ---\n";
+    b1->x = 100.0f;
+    b1->y = 200.0f;
+    std::cout << "  b1 当前坐标: (" << b1->x << ", " << b1->y << ")\n";
+
+    std::cout << "\n--- 3. 归还子弹b1 ---\n";
+    bulletPool.Release(b1);
+
+    std::cout << "\n--- 4. 再次借出子弹（验证内存复用与 Init 重置）---\n";
+    Bullet* b3 = bulletPool.Acquire(); // b3 复用的就是刚刚归还的 b1 的内存
+    std::cout << "  b3 坐标（应该被 Init 重置为 0）: (" << b3->x << ", " << b3->y << ")\n";
+
+    std::cout << "\n=== 测试完成，准备退出 ===\n";
 
     return 0;
 }
