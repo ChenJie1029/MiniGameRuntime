@@ -9,29 +9,37 @@
 #include "Gameplay/CharacterStateMachine.h"
 #include "Core/EventBus.h"
 #include "Core/ObjectPool.h"
+#include "Core/Timer.h"
 
 // ===========================================================9 编写一个具体的业务对象：子弹
+//class Bullet : public Hazel::IPoolable {
+//public:
+//    float x = 0.0f;
+//    float y = 0.0f;
+//    bool active = false;
+//
+//    // 唤醒逻辑
+//    void Init() override {
+//        x = 0.0f;
+//        y = 0.0f;
+//        active = true;
+//        std::cout << "  [Bullet] 子弹激活：坐标归零 (" << x << ", " << y << ")\n";
+//    }
+//
+//    // 归还逻辑
+//    void Reset() override {
+//        active = false;
+//        std::cout << "  [Bullet] 子弹进入休眠状态\n";
+//    }
+//};
+
+// ===========================================================10 Timer.h测试
 class Bullet : public Hazel::IPoolable {
 public:
-    float x = 0.0f;
-    float y = 0.0f;
-    bool active = false;
-
-    // 唤醒逻辑
-    void Init() override {
-        x = 0.0f;
-        y = 0.0f;
-        active = true;
-        std::cout << "  [Bullet] 子弹激活：坐标归零 (" << x << ", " << y << ")\n";
-    }
-
-    // 归还逻辑
-    void Reset() override {
-        active = false;
-        std::cout << "  [Bullet] 子弹进入休眠状态\n";
-    }
+    float x = 0, y = 0;
+    void Init() override{}
+    void Reset() override{}
 };
-
 
 int main() {
     std::cout << "MiniGameRuntime started." << std::endl;
@@ -315,6 +323,31 @@ int main() {
     std::cout << "  b3 坐标（应该被 Init 重置为 0）: (" << b3->x << ", " << b3->y << ")\n";
 
     std::cout << "\n=== 测试完成，准备退出 ===\n";
+
+    //===========================================================10
+    std::cout << "===  Hazel 游戏引擎：Timer测试 ===\n\n";
+    constexpr int TEST_COUNT = 100000;
+
+    // 1. 测试普通 new/delete 的耗时
+    {
+        Hazel::Timer timer;
+        for (int i = 0; i < TEST_COUNT; ++i) {
+            Bullet* b = new Bullet();
+            delete b; // 每次都向操作系统申请和销毁内存
+        }
+        std::cout << "[原生 new/delete] 10 万次耗时: " << timer.ElapsedMilliseconds() << " ms\n";
+    }
+
+    // 2. 测试对象池 Acquire/Release 的耗时
+    {
+        Hazel::ObjectPool<Bullet> pool(TEST_COUNT);
+        Hazel::Timer timer;
+        for (int i = 0; i < TEST_COUNT; ++i) {
+            Bullet* b = pool.Acquire();
+            pool.Release(b);
+        }
+        std::cout << "[Hazel 对象池] 10 万次耗时: " << timer.ElapsedMilliseconds() << " ms\n";
+    }
 
     return 0;
 }
