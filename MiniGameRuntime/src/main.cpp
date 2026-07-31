@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include "Math/Vec2.h"
 #include "Components/TransformComponent.h"
 #include "Components/VelocityComponent.h"
@@ -10,6 +11,7 @@
 #include "Core/EventBus.h"
 #include "Core/ObjectPool.h"
 #include "Core/Timer.h"
+#include "src/Benchmark/MovementBenchmark.h"
 
 // ===========================================================9 编写一个具体的业务对象：子弹
 //class Bullet : public Hazel::IPoolable {
@@ -348,6 +350,33 @@ int main() {
         }
         std::cout << "[Hazel 对象池] 10 万次耗时: " << timer.ElapsedMilliseconds() << " ms\n";
     }
+
+    //===========================================================11
+    std::cout << "===  Hazel 100,000 个实体的移动更新性能测试 ===\n\n";
+
+    constexpr size_t ENTITY_COUNT = 100000;
+    constexpr size_t TOTAL_FRAMES = 1000;
+    constexpr float DELTA_TIME = 0.016f;
+
+    Hazel::MovementSystemDOD movementSystem;
+    movementSystem.Reserve(ENTITY_COUNT);
+
+    Hazel::Timer timer;
+
+    // 运行 1000 帧更新
+    for (size_t frame = 0; frame < TOTAL_FRAMES; ++frame) {
+        movementSystem.Update(DELTA_TIME);
+    }
+
+    float totalMs = timer.ElapsedMilliseconds();
+    float avgFrameMs = totalMs / TOTAL_FRAMES;
+    float totalOps = ENTITY_COUNT * TOTAL_FRAMES;
+
+    std::cout << "最优架构测试结果 (100,000 Entities x 1000 Frames):\n";
+    std::cout << "  - 总运行耗时 : " << totalMs << " ms\n";
+    std::cout << "  - 单帧平均耗时: " << std::fixed << std::setprecision(4) << avgFrameMs << " ms\n";
+    std::cout << "  - 吞吐量     : " << static_cast<size_t>(totalOps / (totalMs / 1000.0f)) << " updates/sec\n";
+    std::cout << "========================================================\n";
 
     return 0;
 }
