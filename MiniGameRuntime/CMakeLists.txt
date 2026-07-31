@@ -28,7 +28,7 @@ add_executable(MiniGameRuntime
     src/Core/World.cpp 
     src/Systems/CollisionSystem.cpp 
     src/Gameplay/CharacterStateMachine.cpp
-    src/Core/EventBus.cpp  "src/demos/LifetimeDemo.cpp" "include/Core/ObjectPool.h" "include/Core/Timer.h" "src/Core/Timer.cpp")
+    src/Core/EventBus.cpp  "src/demos/LifetimeDemo.cpp" "include/Core/ObjectPool.h" "include/Core/Timer.h" "src/Core/Timer.cpp" "src/Benchmark/BenchmarkEntity.h")
 
 # ============================================
 # 5. 指定头文件搜索路径
