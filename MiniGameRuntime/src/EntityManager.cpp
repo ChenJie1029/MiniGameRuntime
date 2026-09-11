@@ -29,7 +29,7 @@ bool EntityManager::IsAlive(Entity entity) const {
 bool EntityManager::DestroyEntity(Entity entity) {
 	// 不能删除无效的 Entity
 	if (entity == INVALID_ENTITY) {
-		return false;
+		return false;	
 	}
 
 	// 经典做法：Erase-Remove 惯用法
