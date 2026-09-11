@@ -6,31 +6,30 @@ int main()
 {
     std::cout << "MiniGameRuntime Sandbox" << std::endl;
 
+    std::cout << std::boolalpha;
+
     EntityManager entityManager;
 
     Entity player = entityManager.CreateEntity();
     Entity enemy = entityManager.CreateEntity();
 
-    std::cout << "Player ID: " << player << std::endl;
+    bool firstDestroy = entityManager.DestroyEntity(enemy); // true
 
-    std::cout << "Enemy ID: " << enemy << std::endl;
+    bool secondDestroy = entityManager.DestroyEntity(enemy); // false
 
-    std::cout << "Living count: " << entityManager.GetEntityCount() << std::endl;
+    bool invalidDestroy = entityManager.DestroyEntity(INVALID_ENTITY); // false
 
-    entityManager.DestroyEntity(enemy);
+    std::cout << "First destroy: " << firstDestroy << std::endl; // true
 
-    Entity third = entityManager.CreateEntity();
+    std::cout << "Second destroy: " << secondDestroy << std::endl; // false
 
-    std::cout << "Third ID: " << third << std::endl;
+    std::cout << "Invalid destroy: " << invalidDestroy << std::endl; // false
 
-    std::cout << "Third alive: " << entityManager.IsAlive(third) << std::endl;
+    std::cout << "Player alive: " << entityManager.IsAlive(player) << std::endl; // true
 
-    std::cout << "Living count after third: " << entityManager.GetEntityCount() << std::endl;
+    std::cout << "Enemy alive: " << entityManager.IsAlive(enemy) << std::endl; // false
 
-
-    std::cout << "Enemy alive: " << entityManager.IsAlive(enemy) << std::endl;
-
-    std::cout << "Living count: " << entityManager.GetEntityCount() << std::endl;
+    std::cout << "Living count: " << entityManager.GetEntityCount() << std::endl; // 1
 
     return 0;
 }
