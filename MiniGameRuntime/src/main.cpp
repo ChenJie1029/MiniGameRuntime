@@ -122,5 +122,6 @@ int main()
         std::cout << "Position:(" << wallTransform.position.x << ", " << wallTransform.position.y << ")" << std::endl;
     }
 
+
     return 0;
 }
