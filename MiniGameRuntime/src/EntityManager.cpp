@@ -51,4 +51,3 @@ bool EntityManager::DestroyEntity(Entity entity) {
 size_t EntityManager::GetEntityCount() const {
 	return m_livingEntities.size();
 }
-
