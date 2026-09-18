@@ -28,7 +28,7 @@ void CollisionSystem::Update(World& world) {
 			const Vec2& halfB = world.GetAABB(entityB).halfExtents;
 
 			if (PhysicsUtils::CheckAABBCollision(posA, halfA, posB, halfB)) {
-				std::cout << "[CollisionSystem] 💥 Detected! Entity [" << entityA
+				std::cout << "[CollisionSystem] Detected! Entity [" << entityA
 					<< "] collided with Entity [" << entityB << "]" << std::endl;
 				CollisionEvent newEvent;
 				newEvent.a = entityA;

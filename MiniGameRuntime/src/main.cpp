@@ -6,6 +6,7 @@
 #include "Math/Vec2.h"
 #include "Core/World.h"
 #include "Physics/PhysicsUtils.h"
+#include "Systems/CollisionSystem.h"
 
 int main()
 {
@@ -124,44 +125,68 @@ int main()
     //}
 
     // ===========================================================================
-    std::cout << "=====================================" << std::endl;
+    //std::cout << "=====================================" << std::endl;
+
+    //World world;
+
+    //Entity boxA = world.CreateEntity();
+    //world.AddTransform(boxA, TransformComponent{ Vec2{0.0f, 0.0f} });
+    //world.AddAABB(boxA, AABBComponent{ 4.0f, 4.0f });
+
+    //Entity boxB = world.CreateEntity();
+    //world.AddTransform(boxB, TransformComponent{ Vec2{5.0f, 0.0f} });
+    //world.AddAABB(boxB, AABBComponent{ 2.0f, 2.0f });
+
+    //TransformComponent& transformA = world.GetTransform(boxA);
+    //AABBComponent& aabbA = world.GetAABB(boxA);
+
+    //TransformComponent& transformB = world.GetTransform(boxB);
+    //AABBComponent& aabbB = world.GetAABB(boxB);
+
+    //bool beforeMove = PhysicsUtils::CheckAABBCollision(
+    //    transformA.position,
+    //    aabbA.halfExtents,
+    //    transformB.position,
+    //    aabbB.halfExtents
+    //);
+
+    //transformB.position.x = 3.0f;
+    //transformB.position.y = 0.0f;
+
+    //bool afterMove = PhysicsUtils::CheckAABBCollision(
+    //    transformA.position,
+    //    aabbA.halfExtents,
+    //    transformB.position,
+    //    aabbB.halfExtents
+    //);
+
+    //std::cout << std::boolalpha;
+    //std::cout << "Before move: " << beforeMove << std::endl;
+    //std::cout << "After move: " << afterMove << std::endl;
+
+    // ===========================================================================
+    std::cout << "==================Day 20===================" << std::endl;
 
     World world;
 
+    CollisionSystem collisionSystem;
+
     Entity boxA = world.CreateEntity();
     world.AddTransform(boxA, TransformComponent{ Vec2{0.0f, 0.0f} });
-    world.AddAABB(boxA, AABBComponent{ 4.0f, 4.0f });
+    world.AddAABB(boxA, AABBComponent{ 1.0f, 1.0f });
 
     Entity boxB = world.CreateEntity();
     world.AddTransform(boxB, TransformComponent{ Vec2{5.0f, 0.0f} });
-    world.AddAABB(boxB, AABBComponent{ 2.0f, 2.0f });
+    world.AddAABB(boxB, AABBComponent{ 1.0f, 1.0f });
 
-    TransformComponent& transformA = world.GetTransform(boxA);
-    AABBComponent& aabbA = world.GetAABB(boxA);
+    std::cout << "First check:" << std::endl;
+    collisionSystem.Update(world);
 
     TransformComponent& transformB = world.GetTransform(boxB);
-    AABBComponent& aabbB = world.GetAABB(boxB);
+    transformB.position.x = 1.0f;
 
-    bool beforeMove = PhysicsUtils::CheckAABBCollision(
-        transformA.position,
-        aabbA.halfExtents,
-        transformB.position,
-        aabbB.halfExtents
-    );
-
-    transformB.position.x = 3.0f;
-    transformB.position.y = 0.0f;
-
-    bool afterMove = PhysicsUtils::CheckAABBCollision(
-        transformA.position,
-        aabbA.halfExtents,
-        transformB.position,
-        aabbB.halfExtents
-    );
-
-    std::cout << std::boolalpha;
-    std::cout << "Before move: " << beforeMove << std::endl;
-    std::cout << "After move: " << afterMove << std::endl;
+    std::cout << "Second check:";
+    collisionSystem.Update(world);
 
     return 0;
 }
