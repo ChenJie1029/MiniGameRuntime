@@ -1,8 +1,5 @@
 # Stage4_Test_Report
 
-~~~c++
-# Stage 4 Test Report
-
 - Build errors: 0
 - Build warnings: 0
 - WASD movement: Pass
@@ -12,5 +9,4 @@
 - Collision detection: Pass
 - Entity destruction cleanup: Pass
 - Duplicate destruction safety: Pass
-~~~
 

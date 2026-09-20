@@ -6,7 +6,6 @@
 
 ~~~c++
 main()
-→ TestEntityDestruction()      临时测试
 → RunSandbox()
 → 创建World和CollisionSystem
 → 创建玩家与障碍物
@@ -35,7 +34,7 @@ HandleInput()
 | 文件                     | 需要说明的内容                                               |
 | ------------------------ | ------------------------------------------------------------ |
 | `main.cpp`               | 程序入口、场景初始化和循环组织                               |
-| `Entity.h`               | `Entity` 实际std::uint_32，`Entity` 只是这个整数类型的别名，无效ID是0 |
+| `Entity.h`               | `Entity` 实际std::uint32_t，`Entity` 只是这个整数类型的别名，无效ID是0 |
 | `EntityManager.h/.cpp`   | EntityManager负责分配Entity ID、保存当前存活ID，并删除指定ID。<br/>World::DestroyEntity()先通知EntityManager删除ID，再从三个组件容器中删除对应组件 |
 | `World.h/.cpp`           | World内部持有EntityManager和三个组件容器，<br/>提供组件添加、查询和存在性检查接口，<br/>Update()根据速度更新位置，<br/>DestroyEntity()同步清理实体及其组件 |
 | `TransformComponent.h`   | 实体的位置                                                   |
