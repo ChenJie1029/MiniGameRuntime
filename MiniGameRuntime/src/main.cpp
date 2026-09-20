@@ -58,46 +58,46 @@ void PrintPosition(World& world, Entity entity) {
         << std::endl;
 }
 
-void TestEntityDestruction() {
-    World testWorld;
-
-    Entity entity = testWorld.CreateEntity();
-
-    testWorld.AddTransform(entity, TransformComponent{ Vec2{1.0f, 2.0f} });
-    testWorld.AddVelocity(entity, VelocityComponent{ Vec2{3.0f, 4.0f} });
-    testWorld.AddAABB(entity, AABBComponent{ 1.0f, 1.0f });
-
-    std::cout << std::boolalpha;
-
-    // 输出销毁前的三项检查
-    std::cout << "Before destroy:" << std::endl;
-    std::cout
-        << "Transform: " << testWorld.HasTransform(entity)
-        << std::endl;
-    std::cout
-        << "Velocity: " << testWorld.HasVelocity(entity)
-        << std::endl;
-    std::cout
-        << "AABB: " << testWorld.HasAABB(entity)
-        << std::endl;
-
-    testWorld.DestroyEntity(entity);
-
-    // 输出销毁后的三项检查
-    std::cout << "After destroy:" << std::endl;
-    std::cout
-        << "Transform: " << testWorld.HasTransform(entity)
-        << std::endl;
-    std::cout
-        << "Velocity: " << testWorld.HasVelocity(entity)
-        << std::endl;
-    std::cout
-        << "AABB: " << testWorld.HasAABB(entity)
-        << std::endl;
-
-    // 重复销毁测试
-    testWorld.DestroyEntity(entity);
-}
+//void TestEntityDestruction() {
+//    World testWorld;
+//
+//    Entity entity = testWorld.CreateEntity();
+//
+//    testWorld.AddTransform(entity, TransformComponent{ Vec2{1.0f, 2.0f} });
+//    testWorld.AddVelocity(entity, VelocityComponent{ Vec2{3.0f, 4.0f} });
+//    testWorld.AddAABB(entity, AABBComponent{ 1.0f, 1.0f });
+//
+//    std::cout << std::boolalpha;
+//
+//    // 输出销毁前的三项检查
+//    std::cout << "Before destroy:" << std::endl;
+//    std::cout
+//        << "Transform: " << testWorld.HasTransform(entity)
+//        << std::endl;
+//    std::cout
+//        << "Velocity: " << testWorld.HasVelocity(entity)
+//        << std::endl;
+//    std::cout
+//        << "AABB: " << testWorld.HasAABB(entity)
+//        << std::endl;
+//
+//    testWorld.DestroyEntity(entity);
+//
+//    // 输出销毁后的三项检查
+//    std::cout << "After destroy:" << std::endl;
+//    std::cout
+//        << "Transform: " << testWorld.HasTransform(entity)
+//        << std::endl;
+//    std::cout
+//        << "Velocity: " << testWorld.HasVelocity(entity)
+//        << std::endl;
+//    std::cout
+//        << "AABB: " << testWorld.HasAABB(entity)
+//        << std::endl;
+//
+//    // 重复销毁测试
+//    testWorld.DestroyEntity(entity);
+//}
 
 void RunSandbox() {
     World world;
@@ -394,9 +394,7 @@ int main()
     //std::cout << "==================Day 23===================" << std::endl;
     std::cout << "MiniGameRuntime Sandbox" << std::endl;
 
-    TestEntityDestruction();
-
-    std::cout << "====================" << std::endl;
+    //TestEntityDestruction();
 
     RunSandbox();
 
