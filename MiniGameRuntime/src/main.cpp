@@ -50,6 +50,28 @@ void PrintPosition(World& world, Entity entity) {
         << std::endl;
 }
 
+void RunSandbox() {
+    World world;
+    CollisionSystem collisionSystem;
+
+    Entity boxA = world.CreateEntity();
+    world.AddTransform(boxA, TransformComponent{ Vec2{0.0f, 0.0f} });
+    world.AddVelocity(boxA, VelocityComponent{ Vec2{0.0f, 0.0f} });
+    world.AddAABB(boxA, AABBComponent{ 1.0f, 1.0f });
+
+    Entity boxB = world.CreateEntity();
+    world.AddTransform(boxB, TransformComponent{ Vec2{5.0f, 0.0f} });
+    world.AddAABB(boxB, AABBComponent{ 1.0f, 1.0f });
+
+    constexpr float deltaTime = 0.5f;
+
+    while (HandleInput(world, boxA)) {
+        world.Update(deltaTime);
+        collisionSystem.Update(world);
+        PrintPosition(world, boxA);
+    }
+}
+
 int main()
 {
     std::cout << "MiniGameRuntime Sandbox" << std::endl;
@@ -296,27 +318,32 @@ int main()
     //}
 
     // ===========================================================================
+    //std::cout << "==================Day 22===================" << std::endl;
+
+    //World world;
+
+    //Entity boxA = world.CreateEntity();
+    //world.AddTransform(boxA, TransformComponent{ Vec2{0.0f, 0.0f} });
+    //world.AddVelocity(boxA, VelocityComponent{ Vec2{0.0f, 0.0f} });
+    //world.AddAABB(boxA, AABBComponent{ 1.0f, 1.0f });
+
+    //Entity boxB = world.CreateEntity();
+    //world.AddTransform(boxB, TransformComponent{ Vec2{5.0f, 0.0f} });
+    //world.AddAABB(boxB, AABBComponent{ 1.0f, 1.0f });
+
+    //CollisionSystem collisionSystem;
+    //constexpr float deltaTime = 0.5f;
+
+    //while (HandleInput(world, boxA)) {
+    //    world.Update(deltaTime);
+    //    collisionSystem.Update(world);
+    //    PrintPosition(world, boxA);
+    //}
+
     std::cout << "==================Day 22===================" << std::endl;
+    std::cout << "MiniGameRuntime Sandbox" << std::endl;
 
-    World world;
-
-    Entity boxA = world.CreateEntity();
-    world.AddTransform(boxA, TransformComponent{ Vec2{0.0f, 0.0f} });
-    world.AddVelocity(boxA, VelocityComponent{ Vec2{0.0f, 0.0f} });
-    world.AddAABB(boxA, AABBComponent{ 1.0f, 1.0f });
-
-    Entity boxB = world.CreateEntity();
-    world.AddTransform(boxB, TransformComponent{ Vec2{5.0f, 0.0f} });
-    world.AddAABB(boxB, AABBComponent{ 1.0f, 1.0f });
-
-    CollisionSystem collisionSystem;
-    constexpr float deltaTime = 0.5f;
-
-    while (HandleInput(world, boxA)) {
-        world.Update(deltaTime);
-        collisionSystem.Update(world);
-        PrintPosition(world, boxA);
-    }
+    RunSandbox();
 
     return 0;
 }
