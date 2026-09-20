@@ -1,16 +1,16 @@
 #include <iostream>
 
-#include "Core/EntityManager.h"
-#include "Components/TransformComponent.h"
-#include "Components/VelocityComponent.h"
-#include "Math/Vec2.h"
+//#include "Core/EntityManager.h"
+//#include "Components/TransformComponent.h"
+//#include "Components/VelocityComponent.h"
+//#include "Math/Vec2.h"
+//#include "Physics/PhysicsUtils.h"
 #include "Core/World.h"
-#include "Physics/PhysicsUtils.h"
 #include "Systems/CollisionSystem.h"
 
 bool HandleInput(World& world, Entity player) {
     while (true) {
-        std::cout << "Move (W/A/S/D, Q to quit):";
+        std::cout << "Move (W/A/S/D, Q to quit): ";
 
         char input;
 
@@ -78,11 +78,13 @@ void RunSandbox() {
         collisionSystem.Update(world);
         PrintPosition(world, boxA);
     }
+
+    std::cout << "Sandbox closed." << std::endl;
 }
 
 int main()
 {
-    std::cout << "MiniGameRuntime Sandbox" << std::endl;
+    //std::cout << "MiniGameRuntime Sandbox" << std::endl;
 
     //World world;
     //Entity player = world.CreateEntity(); // 创建实体，player保存的是实体ID
@@ -348,10 +350,12 @@ int main()
     //    PrintPosition(world, boxA);
     //}
 
-    std::cout << "==================Day 23===================" << std::endl;
+    //std::cout << "==================Day 23===================" << std::endl;
     std::cout << "MiniGameRuntime Sandbox" << std::endl;
 
     RunSandbox();
+
+    
 
     return 0;
 }
