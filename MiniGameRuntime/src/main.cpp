@@ -8,6 +8,48 @@
 #include "Physics/PhysicsUtils.h"
 #include "Systems/CollisionSystem.h"
 
+bool HandleInput(World& world, Entity player) {
+    while (true) {
+        std::cout << "Move (A/D, Q to quit): ";
+
+        char input;
+
+        if (!(std::cin >> input)) {
+            std::cout << "Input error!" << std::endl;
+            return false;
+        }
+
+        VelocityComponent& velocity = world.GetVelocity(player);
+
+        switch (input) {
+        case 'D':
+        case 'd':
+            velocity.velocity.x = 2.0f;
+            return true;
+        case 'A':
+        case 'a':
+            velocity.velocity.x = -2.0f;
+            return true;
+        case 'Q':
+        case 'q':
+            return false;
+        default:
+            std::cout << "Re-enter!" << std::endl;
+            continue;
+        }
+    }
+}
+
+void PrintPosition(World& world, Entity entity) {
+    const TransformComponent& transform = world.GetTransform(entity);
+
+    std::cout
+        << "Player position: ("
+        << transform.position.x << ", "
+        << transform.position.y << ")"
+        << std::endl;
+}
+
 int main()
 {
     std::cout << "MiniGameRuntime Sandbox" << std::endl;
@@ -189,11 +231,74 @@ int main()
     //collisionSystem.Update(world);
 
     // ===========================================================================
-    std::cout << "==================Day 21===================" << std::endl;
+    //std::cout << "==================Day 21===================" << std::endl;
+
+    //World world;
+
+    //CollisionSystem collisionSystem;
+
+    //Entity boxA = world.CreateEntity();
+    //world.AddTransform(boxA, TransformComponent{ Vec2{0.0f, 0.0f} });
+    //world.AddVelocity(boxA, VelocityComponent{ Vec2{0.0f, 0.0f} });
+    //world.AddAABB(boxA, AABBComponent{ 1.0f, 1.0f });
+
+    //Entity boxB = world.CreateEntity();
+    //world.AddTransform(boxB, TransformComponent{ Vec2{5.0f, 0.0f} });
+    //world.AddAABB(boxB, AABBComponent{ 1.0f, 1.0f });
+
+    //VelocityComponent& velocity = world.GetVelocity(boxA);
+
+    //constexpr float deltaTime = 0.5f;
+
+    //bool quit = false;
+    //while (!quit) {
+    //    std::cout << "Move (A/D, Q to quit): ";
+    //    char input;
+    //    
+    //    if (!(std::cin >> input)) {
+    //        std::cout << "Input error!" << std::endl;
+    //        break;
+    //    }
+
+    //    switch (input) {
+    //    case 'D':
+    //    case 'd':
+    //        velocity.velocity.x = 2.0f;
+    //        break;
+    //    case 'A':
+    //    case 'a':
+    //        velocity.velocity.x = -2.0f;
+    //        break;
+    //    case 'Q':
+    //    case 'q':
+    //        quit = true;
+    //        break;
+    //    default:
+    //        std::cout << "Re-enter!" << std::endl;
+    //        continue;
+    //    }
+
+    //    if (quit) {
+    //        break;
+    //    }
+
+    //    world.Update(deltaTime);
+    //    collisionSystem.Update(world);
+
+    //    const TransformComponent& transform = world.GetTransform(boxA);
+
+    //    std::cout
+    //        << "Player position: ("
+    //        << transform.position.x << ", "
+    //        << transform.position.y << ")"
+    //        << std::endl;
+
+    //}
+
+    // ===========================================================================
+    std::cout << "==================Day 22===================" << std::endl;
 
     World world;
-
-    CollisionSystem collisionSystem;
 
     Entity boxA = world.CreateEntity();
     world.AddTransform(boxA, TransformComponent{ Vec2{0.0f, 0.0f} });
@@ -204,53 +309,13 @@ int main()
     world.AddTransform(boxB, TransformComponent{ Vec2{5.0f, 0.0f} });
     world.AddAABB(boxB, AABBComponent{ 1.0f, 1.0f });
 
-    VelocityComponent& velocity = world.GetVelocity(boxA);
-
+    CollisionSystem collisionSystem;
     constexpr float deltaTime = 0.5f;
 
-    bool quit = false;
-    while (!quit) {
-        std::cout << "Move (A/D, Q to quit): ";
-        char input;
-        
-        if (!(std::cin >> input)) {
-            std::cout << "Input error!" << std::endl;
-            break;
-        }
-
-        switch (input) {
-        case 'D':
-        case 'd':
-            velocity.velocity.x = 2.0f;
-            break;
-        case 'A':
-        case 'a':
-            velocity.velocity.x = -2.0f;
-            break;
-        case 'Q':
-        case 'q':
-            quit = true;
-            break;
-        default:
-            std::cout << "Re-enter!" << std::endl;
-            continue;
-        }
-
-        if (quit) {
-            break;
-        }
-
+    while (HandleInput(world, boxA)) {
         world.Update(deltaTime);
         collisionSystem.Update(world);
-
-        const TransformComponent& transform = world.GetTransform(boxA);
-
-        std::cout
-            << "Player position: ("
-            << transform.position.x << ", "
-            << transform.position.y << ")"
-            << std::endl;
-
+        PrintPosition(world, boxA);
     }
 
     return 0;
