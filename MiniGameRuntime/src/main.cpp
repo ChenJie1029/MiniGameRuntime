@@ -10,7 +10,7 @@
 
 bool HandleInput(World& world, Entity player) {
     while (true) {
-        std::cout << "Move (A/D, Q to quit): ";
+        std::cout << "Move (W/A/S/D, Q to quit):";
 
         char input;
 
@@ -22,13 +22,21 @@ bool HandleInput(World& world, Entity player) {
         VelocityComponent& velocity = world.GetVelocity(player);
 
         switch (input) {
-        case 'D':
-        case 'd':
-            velocity.velocity.x = 2.0f;
+        case 'W':
+        case 'w':
+            velocity.velocity = Vec2{ 0.0f, 2.0f };
             return true;
         case 'A':
         case 'a':
-            velocity.velocity.x = -2.0f;
+            velocity.velocity = Vec2{ -2.0f, 0.0f };
+            return true;
+        case 'S':
+        case 's':
+            velocity.velocity = Vec2{0.0f, -2.0f};
+            return true;
+        case 'D':
+        case 'd':
+            velocity.velocity = Vec2{ 2.0f, 0.0f };
             return true;
         case 'Q':
         case 'q':
@@ -340,7 +348,7 @@ int main()
     //    PrintPosition(world, boxA);
     //}
 
-    std::cout << "==================Day 22===================" << std::endl;
+    std::cout << "==================Day 23===================" << std::endl;
     std::cout << "MiniGameRuntime Sandbox" << std::endl;
 
     RunSandbox();
