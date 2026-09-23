@@ -23,9 +23,11 @@ float DegreesToRadians(float degrees) { // 角度转弧度
 }
 
 Vec2 DirectionFromDegrees(float degrees) { // 根据角度计算方向
+    float radians = DegreesToRadians(degrees);
+
     Vec2 direction;
-    direction.x = cos(DegreesToRadians(degrees));
-    direction.y = sin(DegreesToRadians(degrees));
+    direction.x = std::cos(radians);
+    direction.y = std::sin(radians);
 
     return direction;
 }
@@ -41,6 +43,27 @@ Vec2 RotateVector(const Vec2& vector, float degrees) { // 旋转二维向量
     rotated.y = vector.x * sine + vector.y * cosine;
 
     return rotated;
+}
+
+Vec2 TranslatePoint(const Vec2& point, const Vec2& translation) { // 平移
+    return point + translation;
+}
+
+Vec2 ScalePoint(const Vec2& point, const Vec2& scale) { // 缩放
+    Vec2 newPoint;
+
+    newPoint.x = point.x * scale.x;
+    newPoint.y = point.y * scale.y;
+
+    return newPoint;
+}
+
+Vec2 TransformPoint(const Vec2& localPoint, const Vec2& position, const Vec2& scale, float rotationDegrees) {
+    Vec2 transformed = ScalePoint(localPoint, scale);
+    transformed = RotateVector(transformed, rotationDegrees);
+    transformed = TranslatePoint(transformed, position);
+
+    return transformed;
 }
 
 int main()
@@ -87,6 +110,40 @@ int main()
 
     PrintVec2(rotated90);
     PrintVec2(rotated180);
+
+    // ======================================================================
+    std::cout << "======================================================================" << std::endl;
+
+    Vec2 localPoint{ 2.0f, 0.0f };
+    Vec2 objectPosition{ 10.0f, 5.0f };
+    Vec2 objectScale{ 2.0f, 1.0f };
+    float objectRotation = 90.0f;
+
+    Vec2 scaled = ScalePoint(localPoint, objectScale);
+    Vec2 rotated = RotateVector(scaled, objectRotation);
+    Vec2 worldPoint = TranslatePoint(rotated, objectPosition);
+
+    Vec2 transformed = TransformPoint(
+        localPoint,
+        objectPosition,
+        objectScale,
+        objectRotation
+    );
+
+    std::cout << "Local point: ";
+    PrintVec2(localPoint);
+
+    std::cout << "Scaled point: ";
+    PrintVec2(scaled);
+
+    std::cout << "Rotated point: ";
+    PrintVec2(rotated);
+
+    std::cout << "World point: ";
+    PrintVec2(worldPoint);
+
+    std::cout << "TransformPoint result: ";
+    PrintVec2(transformed);
 
     return 0;
 }
