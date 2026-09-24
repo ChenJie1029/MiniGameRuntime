@@ -117,6 +117,28 @@ Mat3 CreateTranslationMatrix(float translationX, float translationY) { // 创建
     return matrix;
 }
 
+Vec2 WorldToView(const Vec2& worldPoint, const Vec2& cameraPosition) { // 世界坐标转观察坐标
+    return worldPoint - cameraPosition;
+}
+
+Vec2 ViewToNDC(const Vec2& viewPoint, float viewWidth, float viewHeight) { // 观察坐标转NDC坐标  假设摄像机可见范围宽800、高600
+    Vec2 ndc;
+
+    ndc.x = viewPoint.x / (viewWidth * 0.5f);
+    ndc.y = viewPoint.y / (viewHeight * 0.5f);
+
+    return ndc;
+}
+
+Vec2 NDCToScreen(const Vec2& ndc, float screenWidth, float screenHeight) { // NDC转屏幕坐标
+    Vec2 screen;
+
+    screen.x = (ndc.x + 1.0f) * 0.5f * screenWidth;
+    screen.y = (1.0f - ndc.y) * 0.5f * screenHeight;
+
+    return screen;
+}
+
 int main()
 {
     // ======================================================================
@@ -197,26 +219,86 @@ int main()
     //PrintVec2(transformed);
 
     // ======================================================================
-    std::cout << "===================================Day 4===================================" << std::endl;
+    //std::cout << "===================================Day 4===================================" << std::endl;
 
-    Vec2 localPoint{ 2.0f, 0.0f };
-    Mat3 scaleMatrix = CreateScaleMatrix(2.0f, 1.0f);
-    Mat3 rotationMatrix = CreateRotationMatrix(90.0f);
-    Mat3 translationMatrix = CreateTranslationMatrix(10.0f, 5.0f);
+    //Vec2 localPoint{ 2.0f, 0.0f };
+    //Mat3 scaleMatrix = CreateScaleMatrix(2.0f, 1.0f);
+    //Mat3 rotationMatrix = CreateRotationMatrix(90.0f);
+    //Mat3 translationMatrix = CreateTranslationMatrix(10.0f, 5.0f);
 
-    Vec2 matrixResult = TransformPointByMatrix(scaleMatrix, localPoint);
-    matrixResult = TransformPointByMatrix(rotationMatrix, matrixResult);
-    matrixResult = TransformPointByMatrix(translationMatrix, matrixResult);
+    //Vec2 matrixResult = TransformPointByMatrix(scaleMatrix, localPoint);
+    //matrixResult = TransformPointByMatrix(rotationMatrix, matrixResult);
+    //matrixResult = TransformPointByMatrix(translationMatrix, matrixResult);
 
-    Vec2 wrongOrder = TransformPointByMatrix(translationMatrix, localPoint);
-    wrongOrder = TransformPointByMatrix(rotationMatrix, wrongOrder);
-    wrongOrder = TransformPointByMatrix(scaleMatrix, wrongOrder);
+    //Vec2 wrongOrder = TransformPointByMatrix(translationMatrix, localPoint);
+    //wrongOrder = TransformPointByMatrix(rotationMatrix, wrongOrder);
+    //wrongOrder = TransformPointByMatrix(scaleMatrix, wrongOrder);
 
-    std::cout << "Wrong order result: ";
-    PrintVec2(wrongOrder);
+    //std::cout << "Wrong order result: ";
+    //PrintVec2(wrongOrder);
 
-    std::cout << "Matrix result: ";
-    PrintVec2(matrixResult);
+    //std::cout << "Matrix result: ";
+    //PrintVec2(matrixResult);
+
+    // ======================================================================
+    std::cout << "===================================Day 5===================================" << std::endl;
+
+    Vec2 localPoint{ 0.0f, 0.0f };
+
+    Vec2 objectPosition{ 300.0f, 200.0f };
+    Vec2 objectScale{ 1.0f, 1.0f };
+    float objectRotation = 0.0f;
+
+    Vec2 cameraPosition{ 100.0f, 50.0f };
+
+    Vec2 centerWorldPoint{ 100.0f, 50.0f };
+
+    constexpr float viewWidth = 800.0f;
+    constexpr float viewHeight = 600.0f;
+
+    constexpr float screenWidth = 800.0f;
+    constexpr float screenHeight = 600.0f;
+
+    Vec2 worldPoint = TransformPoint(
+        localPoint,
+        objectPosition,
+        objectScale,
+        objectRotation
+    );
+
+    Vec2 viewPoint = WorldToView(worldPoint, cameraPosition);
+    Vec2 ndcPoint = ViewToNDC(viewPoint, viewWidth, viewHeight);
+    Vec2 screenPoint = NDCToScreen(ndcPoint, screenWidth, screenHeight);
+
+    std::cout << "Local: ";
+    PrintVec2(localPoint);
+
+    std::cout << "World: ";
+    PrintVec2(worldPoint);
+
+    std::cout << "View: ";
+    PrintVec2(viewPoint);
+
+    std::cout << "NDC: ";
+    PrintVec2(ndcPoint);
+
+    std::cout << "Screen: ";
+    PrintVec2(screenPoint);
+
+    Vec2 centerViewPoint = WorldToView(centerWorldPoint, cameraPosition);
+
+    Vec2 centerNDCPoint = ViewToNDC(centerViewPoint, viewWidth, viewHeight);
+
+    Vec2 centerScreenPoint = NDCToScreen(centerNDCPoint, screenWidth, screenHeight);
+
+    std::cout << "Center View: ";
+    PrintVec2(centerViewPoint);
+
+    std::cout << "Center NDC: ";
+    PrintVec2(centerNDCPoint);
+
+    std::cout << "Center Screen: ";
+    PrintVec2(centerScreenPoint);
 
     return 0;
 }
