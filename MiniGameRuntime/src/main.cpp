@@ -336,6 +336,8 @@ int main(int argc, char* argv[])
 
     std::cout << "SDL window created successfully!" << std::endl;
 
+    Vec2 playerPosition{ 0.0f, 0.0f };
+
     bool running = true;
 
     while (running) {
@@ -345,6 +347,38 @@ int main(int argc, char* argv[])
             if (event.type == SDL_QUIT) {
                 std::cout << "Quit event received!" << std::endl;
                 running = false;
+            }
+            else if (event.type == SDL_KEYDOWN && event.key.repeat == 0) { // 当前事件是不是“某个键被按下” && event.key.repeat == 0第一次按下该键
+                switch (event.key.keysym.sym) { // 具体按下的是哪个键
+                case SDLK_w:
+                    playerPosition.y += 1.0f;
+                    std::cout << "W pressed. Position: ";
+                    PrintVec2(playerPosition);
+                    break;
+
+                case SDLK_s:
+                    playerPosition.y -= 1.0f;
+                    std::cout << "S pressed. Position: ";
+                    PrintVec2(playerPosition);
+                    break;
+
+                case SDLK_a:
+                    playerPosition.x -= 1.0f;
+                    std::cout << "A pressed. Position: ";
+                    PrintVec2(playerPosition);
+                    break;
+
+                case SDLK_d:
+                    playerPosition.x += 1.0f;
+                    std::cout << "D pressed. Position: ";
+                    PrintVec2(playerPosition);
+                    break;
+
+                case SDLK_ESCAPE:
+                    std::cout << "Escape pressed!" << std::endl;
+                    running = false;
+                    break;
+                }
             }
         }
 
