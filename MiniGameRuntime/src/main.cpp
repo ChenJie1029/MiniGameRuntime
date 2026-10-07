@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cmath>
+#include <SDL.h>
 
 #include "Math/Vec2.h"
 
@@ -139,8 +140,8 @@ Vec2 NDCToScreen(const Vec2& ndc, float screenWidth, float screenHeight) { // ND
     return screen;
 }
 
-int main()
-{
+//int main()
+//{
     // ======================================================================
     //std::cout << "======================================================================" << std::endl;
 
@@ -241,64 +242,104 @@ int main()
     //PrintVec2(matrixResult);
 
     // ======================================================================
-    std::cout << "===================================Day 5===================================" << std::endl;
+    //std::cout << "===================================Day 5===================================" << std::endl;
 
-    Vec2 localPoint{ 0.0f, 0.0f };
+    //Vec2 localPoint{ 0.0f, 0.0f };
 
-    Vec2 objectPosition{ 300.0f, 200.0f };
-    Vec2 objectScale{ 1.0f, 1.0f };
-    float objectRotation = 0.0f;
+    //Vec2 objectPosition{ 300.0f, 200.0f };
+    //Vec2 objectScale{ 1.0f, 1.0f };
+    //float objectRotation = 0.0f;
 
-    Vec2 cameraPosition{ 100.0f, 50.0f };
+    //Vec2 cameraPosition{ 100.0f, 50.0f };
 
-    Vec2 centerWorldPoint{ 100.0f, 50.0f };
+    //Vec2 centerWorldPoint{ 100.0f, 50.0f };
 
-    constexpr float viewWidth = 800.0f;
-    constexpr float viewHeight = 600.0f;
+    //constexpr float viewWidth = 800.0f;
+    //constexpr float viewHeight = 600.0f;
 
-    constexpr float screenWidth = 800.0f;
-    constexpr float screenHeight = 600.0f;
+    //constexpr float screenWidth = 800.0f;
+    //constexpr float screenHeight = 600.0f;
 
-    Vec2 worldPoint = TransformPoint(
-        localPoint,
-        objectPosition,
-        objectScale,
-        objectRotation
+    //Vec2 worldPoint = TransformPoint(
+    //    localPoint,
+    //    objectPosition,
+    //    objectScale,
+    //    objectRotation
+    //);
+
+    //Vec2 viewPoint = WorldToView(worldPoint, cameraPosition);
+    //Vec2 ndcPoint = ViewToNDC(viewPoint, viewWidth, viewHeight);
+    //Vec2 screenPoint = NDCToScreen(ndcPoint, screenWidth, screenHeight);
+
+    //std::cout << "Local: ";
+    //PrintVec2(localPoint);
+
+    //std::cout << "World: ";
+    //PrintVec2(worldPoint);
+
+    //std::cout << "View: ";
+    //PrintVec2(viewPoint);
+
+    //std::cout << "NDC: ";
+    //PrintVec2(ndcPoint);
+
+    //std::cout << "Screen: ";
+    //PrintVec2(screenPoint);
+
+    //Vec2 centerViewPoint = WorldToView(centerWorldPoint, cameraPosition);
+
+    //Vec2 centerNDCPoint = ViewToNDC(centerViewPoint, viewWidth, viewHeight);
+
+    //Vec2 centerScreenPoint = NDCToScreen(centerNDCPoint, screenWidth, screenHeight);
+
+    //std::cout << "Center View: ";
+    //PrintVec2(centerViewPoint);
+
+    //std::cout << "Center NDC: ";
+    //PrintVec2(centerNDCPoint);
+
+    //std::cout << "Center Screen: ";
+    //PrintVec2(centerScreenPoint);
+
+    //return 0;
+//}
+
+int main(int argc, char* argv[])
+{
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        std::cout
+            << "SDL initialization failed: "
+            << SDL_GetError()
+            << std::endl;
+
+        return 1;
+    }
+
+    SDL_Window* window = SDL_CreateWindow(
+        "MiniGameRuntime",
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED,
+        800,
+        600,
+        SDL_WINDOW_SHOWN
     );
 
-    Vec2 viewPoint = WorldToView(worldPoint, cameraPosition);
-    Vec2 ndcPoint = ViewToNDC(viewPoint, viewWidth, viewHeight);
-    Vec2 screenPoint = NDCToScreen(ndcPoint, screenWidth, screenHeight);
+    if (window == nullptr) {
+        std::cout
+            << "Window creation failed: "
+            << SDL_GetError()
+            << std::endl;
 
-    std::cout << "Local: ";
-    PrintVec2(localPoint);
+        SDL_Quit();
+        return 1;
+    }
 
-    std::cout << "World: ";
-    PrintVec2(worldPoint);
+    std::cout << "SDL window created successfully!" << std::endl;
 
-    std::cout << "View: ";
-    PrintVec2(viewPoint);
+    SDL_Delay(3000);
 
-    std::cout << "NDC: ";
-    PrintVec2(ndcPoint);
-
-    std::cout << "Screen: ";
-    PrintVec2(screenPoint);
-
-    Vec2 centerViewPoint = WorldToView(centerWorldPoint, cameraPosition);
-
-    Vec2 centerNDCPoint = ViewToNDC(centerViewPoint, viewWidth, viewHeight);
-
-    Vec2 centerScreenPoint = NDCToScreen(centerNDCPoint, screenWidth, screenHeight);
-
-    std::cout << "Center View: ";
-    PrintVec2(centerViewPoint);
-
-    std::cout << "Center NDC: ";
-    PrintVec2(centerNDCPoint);
-
-    std::cout << "Center Screen: ";
-    PrintVec2(centerScreenPoint);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 
     return 0;
 }
