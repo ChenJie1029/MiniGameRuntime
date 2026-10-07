@@ -336,7 +336,20 @@ int main(int argc, char* argv[])
 
     std::cout << "SDL window created successfully!" << std::endl;
 
-    SDL_Delay(3000);
+    bool running = true;
+
+    while (running) {
+        SDL_Event event; // 一个可以保存不同事件数据的SDL类型 联合类型
+
+        while (SDL_PollEvent(&event)) { // 有事件时返回1，并把事件放入event；没有事件时返回0，结束循环；queue
+            if (event.type == SDL_QUIT) {
+                std::cout << "Quit event received!" << std::endl;
+                running = false;
+            }
+        }
+
+        SDL_Delay(16);
+    }
 
     SDL_DestroyWindow(window);
     SDL_Quit();
