@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include <SDL.h>
+#include <string>
 
 #include "Math/Vec2.h"
 
@@ -338,49 +339,64 @@ int main(int argc, char* argv[])
 
     Vec2 playerPosition{ 0.0f, 0.0f };
 
+    constexpr float playerSpeed = 100.0f;
+
+    const Uint64 performanceFrequency = SDL_GetPerformanceFrequency(); // 读取每秒包含多少个计数
+    Uint64 previousCounter = SDL_GetPerformanceCounter(); // 读取当前高精度计数
+
     bool running = true;
 
     while (running) {
+        Uint64 currentCounter = SDL_GetPerformanceCounter(); // 读取当前时间点
+
+        float deltaTime = static_cast<float>(currentCounter - previousCounter) / static_cast<float>(performanceFrequency); // 计算这一帧花了多少秒
+
+        previousCounter = currentCounter;
+
         SDL_Event event; // 一个可以保存不同事件数据的SDL类型 联合类型
 
         while (SDL_PollEvent(&event)) { // 有事件时返回1，并把事件放入event；没有事件时返回0，结束循环；queue
             if (event.type == SDL_QUIT) {
-                std::cout << "Quit event received!" << std::endl;
                 running = false;
             }
-            else if (event.type == SDL_KEYDOWN && event.key.repeat == 0) { // 当前事件是不是“某个键被按下” && event.key.repeat == 0第一次按下该键
-                switch (event.key.keysym.sym) { // 具体按下的是哪个键
-                case SDLK_w:
-                    playerPosition.y += 1.0f;
-                    std::cout << "W pressed. Position: ";
-                    PrintVec2(playerPosition);
-                    break;
-
-                case SDLK_s:
-                    playerPosition.y -= 1.0f;
-                    std::cout << "S pressed. Position: ";
-                    PrintVec2(playerPosition);
-                    break;
-
-                case SDLK_a:
-                    playerPosition.x -= 1.0f;
-                    std::cout << "A pressed. Position: ";
-                    PrintVec2(playerPosition);
-                    break;
-
-                case SDLK_d:
-                    playerPosition.x += 1.0f;
-                    std::cout << "D pressed. Position: ";
-                    PrintVec2(playerPosition);
-                    break;
-
-                case SDLK_ESCAPE:
-                    std::cout << "Escape pressed!" << std::endl;
-                    running = false;
-                    break;
-                }
+            else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) { // 当前事件是不是“某个键被按下” && event.key.repeat == 0第一次按下该键
+                running = false;
             }
         }
+
+        if (!running) {
+            break;
+        }
+
+        const Uint8* keyboardState = SDL_GetKeyboardState(nullptr);
+
+        Vec2 direction{ 0.0f, 0.0f };
+
+        if (keyboardState[SDL_SCANCODE_W]) {
+            direction.y += 1.0f;
+        }
+
+        if (keyboardState[SDL_SCANCODE_A]) {
+            direction.x -= 1.0f;
+        }
+
+        if (keyboardState[SDL_SCANCODE_S]) {
+            direction.y -= 1.0f;
+        }
+
+        if (keyboardState[SDL_SCANCODE_D]) {
+            direction.x += 1.0f;
+        }
+
+        playerPosition.x += direction.x * playerSpeed * deltaTime;
+        playerPosition.y += direction.y * playerSpeed * deltaTime;
+
+        std::string title =
+            "MiniGameRuntime - Position: (" +
+            std::to_string(playerPosition.x) + ", " +
+            std::to_string(playerPosition.y) + ")";
+
+        SDL_SetWindowTitle(window, title.c_str());
 
         SDL_Delay(16);
     }
