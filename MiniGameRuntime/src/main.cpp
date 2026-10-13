@@ -335,11 +335,28 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    SDL_Renderer* renderer = SDL_CreateRenderer( // 为指定窗口创建二维绘图环境，失败时返回空指针
+        window,
+        -1,
+        SDL_RENDERER_ACCELERATED
+    );
+
+    if (renderer == nullptr) {
+        std::cout
+            << "Failed to create renderer: "
+            << SDL_GetError()
+            << std::endl;
+
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return 1;
+    }
+
     std::cout << "SDL window created successfully!" << std::endl;
 
-    Vec2 playerPosition{ 0.0f, 0.0f };
+    Vec2 playerPosition{ 400.0f, 300.0f };
 
-    constexpr float playerSpeed = 100.0f;
+    constexpr float playerSpeed = 300.0f;
 
     const Uint64 performanceFrequency = SDL_GetPerformanceFrequency(); // 读取每秒包含多少个计数
     Uint64 previousCounter = SDL_GetPerformanceCounter(); // 读取当前高精度计数
@@ -373,7 +390,7 @@ int main(int argc, char* argv[])
         Vec2 direction{ 0.0f, 0.0f };
 
         if (keyboardState[SDL_SCANCODE_W]) {
-            direction.y += 1.0f;
+            direction.y -= 1.0f;
         }
 
         if (keyboardState[SDL_SCANCODE_A]) {
@@ -381,7 +398,7 @@ int main(int argc, char* argv[])
         }
 
         if (keyboardState[SDL_SCANCODE_S]) {
-            direction.y -= 1.0f;
+            direction.y += 1.0f;
         }
 
         if (keyboardState[SDL_SCANCODE_D]) {
@@ -398,9 +415,28 @@ int main(int argc, char* argv[])
 
         SDL_SetWindowTitle(window, title.c_str());
 
+        SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255); // 设置背景色
+        SDL_RenderClear(renderer); // 使用背景色清空上一帧
+
+        constexpr int playerWidth = 50;
+        constexpr int playerHeight = 50;
+
+        SDL_Rect playerRect{
+            static_cast<int>(playerPosition.x) - playerWidth / 2,
+            static_cast<int>(playerPosition.y) - playerHeight / 2,
+            playerWidth,
+            playerHeight
+        };
+
+        SDL_SetRenderDrawColor(renderer, 60, 150, 255, 255);
+        SDL_RenderFillRect(renderer, &playerRect); // 使用当前绘图颜色填充矩形
+
+        SDL_RenderPresent(renderer);
+
         SDL_Delay(16);
     }
 
+    SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
 
