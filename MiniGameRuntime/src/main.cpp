@@ -313,6 +313,8 @@ void UpdatePlayer(Vec2& playerPosition, const Vec2& direction, float playerSpeed
 
 void Render(SDL_Renderer* renderer, const Vec2& playerPosition);
 
+void KeepPlayerInsideWindow(Vec2& playerPosition);
+
 float CalculateDeltaTime(Uint64& previousCounter, Uint64 performanceFrequency) { // 上一次时间点 参数值每秒多少tick
     Uint64 currentCounter = SDL_GetPerformanceCounter(); // 读取当前时刻的高精度计时器读数，并存到一个 64 位无符号整数变量里
 
@@ -382,6 +384,38 @@ void Render(SDL_Renderer* renderer, const Vec2& playerPosition) {
     SDL_RenderFillRect(renderer, &playerRect); // 填充
 
     SDL_RenderPresent(renderer); // 提交 显示到屏幕
+}
+
+constexpr int WINDOW_WIDTH = 800;
+constexpr int WINDOW_HEIGHT = 600;
+
+constexpr int PLAYER_WIDTH = 50;
+constexpr int PLAYER_HEIGHT = 50;
+
+float Clamp(float value, float minValue, float maxValue) {
+    if (value < minValue) {
+        return minValue;
+    }
+
+    if (value > maxValue) {
+        return maxValue;
+    }
+
+    return value;
+}
+
+void KeepPlayerInsideWindow(Vec2& playerPosition) {
+    float halfWidth = PLAYER_WIDTH * 0.5f;
+    float halfHeight = PLAYER_HEIGHT * 0.5f;
+
+    float minX = halfWidth;
+    float maxX = WINDOW_WIDTH - halfWidth;
+
+    float minY = halfHeight;
+    float maxY = WINDOW_HEIGHT - halfHeight;
+
+    playerPosition.x = Clamp(playerPosition.x, minX, maxX);
+    playerPosition.y = Clamp(playerPosition.y, minY, maxY);
 }
 
 int main(int argc, char* argv[])
@@ -462,6 +496,8 @@ int main(int argc, char* argv[])
             playerSpeed,
             deltaTime
         );
+
+        KeepPlayerInsideWindow(playerPosition);
 
         Render(renderer, playerPosition);
 
