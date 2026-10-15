@@ -305,6 +305,85 @@ Vec2 NDCToScreen(const Vec2& ndc, float screenWidth, float screenHeight) { // ND
     //return 0;
 //}
 
+float CalculateDeltaTime(Uint64& previousCounter, Uint64 performanceFrequency);
+
+bool ProcessInput(Vec2& direction);
+
+void UpdatePlayer(Vec2& playerPosition, const Vec2& direction, float playerSpeed, float deltaTime);
+
+void Render(SDL_Renderer* renderer, const Vec2& playerPosition);
+
+float CalculateDeltaTime(Uint64& previousCounter, Uint64 performanceFrequency) { // 上一次时间点 参数值每秒多少tick
+    Uint64 currentCounter = SDL_GetPerformanceCounter(); // 读取当前时刻的高精度计时器读数，并存到一个 64 位无符号整数变量里
+
+    float deltaTime = static_cast<float>(currentCounter - previousCounter) / static_cast<float>(performanceFrequency); // (距上次调用过了多少 tick) / 过了多少秒
+
+    previousCounter = currentCounter; // 
+
+    return deltaTime; // 从上一帧到这一帧，经过了多少时间
+}
+
+bool ProcessInput(Vec2& direction) {
+    direction = Vec2{ 0.0f, 0.0f }; // 方向
+
+    SDL_Event event; // 具体键盘事件
+
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_QUIT) {
+            return false;
+        }
+
+        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
+            return false;
+        }
+    }
+
+    const Uint8* keyboardState = SDL_GetKeyboardState(nullptr);
+
+    if (keyboardState[SDL_SCANCODE_W]) {
+        direction.y -= 1.0f;
+    }
+
+    if (keyboardState[SDL_SCANCODE_A]) {
+        direction.x -= 1.0f;
+    }
+
+    if (keyboardState[SDL_SCANCODE_S]) {
+        direction.y += 1.0f;
+    }
+
+    if (keyboardState[SDL_SCANCODE_D]) {
+        direction.x += 1.0f;
+    }
+
+    return true;
+}
+
+void UpdatePlayer(Vec2& playerPosition, const Vec2& direction, float playerSpeed, float deltaTime) {
+    playerPosition.x += direction.x * playerSpeed * deltaTime;
+    playerPosition.y += direction.y * playerSpeed * deltaTime;
+}
+
+void Render(SDL_Renderer* renderer, const Vec2& playerPosition) {
+    SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255);
+    SDL_RenderClear(renderer); // 清屏
+
+    constexpr int playerWidth = 50;
+    constexpr int playerHeight = 50;
+
+    SDL_Rect playerRect{ 
+        static_cast<int>(playerPosition.x) - playerWidth / 2, // 中心点横坐标
+        static_cast<int>(playerPosition.y) - playerHeight / 2, // 中心点纵坐标
+        playerWidth, // 宽
+        playerHeight // 高
+    };
+
+    SDL_SetRenderDrawColor(renderer, 60, 150, 255, 255);
+    SDL_RenderFillRect(renderer, &playerRect); // 填充
+
+    SDL_RenderPresent(renderer); // 提交 显示到屏幕
+}
+
 int main(int argc, char* argv[])
 {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -364,74 +443,27 @@ int main(int argc, char* argv[])
     bool running = true;
 
     while (running) {
-        Uint64 currentCounter = SDL_GetPerformanceCounter(); // 读取当前时间点
+        float deltaTime = CalculateDeltaTime(
+            previousCounter,
+            performanceFrequency
+        );
 
-        float deltaTime = static_cast<float>(currentCounter - previousCounter) / static_cast<float>(performanceFrequency); // 计算这一帧花了多少秒
+        Vec2 direction{ 0.0f, 0.0f };
 
-        previousCounter = currentCounter;
-
-        SDL_Event event; // 一个可以保存不同事件数据的SDL类型 联合类型
-
-        while (SDL_PollEvent(&event)) { // 有事件时返回1，并把事件放入event；没有事件时返回0，结束循环；queue
-            if (event.type == SDL_QUIT) {
-                running = false;
-            }
-            else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) { // 当前事件是不是“某个键被按下” && event.key.repeat == 0第一次按下该键
-                running = false;
-            }
-        }
+        running = ProcessInput(direction);
 
         if (!running) {
             break;
         }
 
-        const Uint8* keyboardState = SDL_GetKeyboardState(nullptr);
+        UpdatePlayer(
+            playerPosition,
+            direction,
+            playerSpeed,
+            deltaTime
+        );
 
-        Vec2 direction{ 0.0f, 0.0f };
-
-        if (keyboardState[SDL_SCANCODE_W]) {
-            direction.y -= 1.0f;
-        }
-
-        if (keyboardState[SDL_SCANCODE_A]) {
-            direction.x -= 1.0f;
-        }
-
-        if (keyboardState[SDL_SCANCODE_S]) {
-            direction.y += 1.0f;
-        }
-
-        if (keyboardState[SDL_SCANCODE_D]) {
-            direction.x += 1.0f;
-        }
-
-        playerPosition.x += direction.x * playerSpeed * deltaTime;
-        playerPosition.y += direction.y * playerSpeed * deltaTime;
-
-        std::string title =
-            "MiniGameRuntime - Position: (" +
-            std::to_string(playerPosition.x) + ", " +
-            std::to_string(playerPosition.y) + ")";
-
-        SDL_SetWindowTitle(window, title.c_str());
-
-        SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255); // 设置背景色
-        SDL_RenderClear(renderer); // 使用背景色清空上一帧
-
-        constexpr int playerWidth = 50;
-        constexpr int playerHeight = 50;
-
-        SDL_Rect playerRect{
-            static_cast<int>(playerPosition.x) - playerWidth / 2,
-            static_cast<int>(playerPosition.y) - playerHeight / 2,
-            playerWidth,
-            playerHeight
-        };
-
-        SDL_SetRenderDrawColor(renderer, 60, 150, 255, 255);
-        SDL_RenderFillRect(renderer, &playerRect); // 使用当前绘图颜色填充矩形
-
-        SDL_RenderPresent(renderer);
+        Render(renderer, playerPosition);
 
         SDL_Delay(16);
     }
