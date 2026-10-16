@@ -2,6 +2,7 @@
 #include <cmath>
 #include <SDL.h>
 #include <string>
+#include <cmath>
 
 #include "Math/Vec2.h"
 
@@ -305,15 +306,39 @@ Vec2 NDCToScreen(const Vec2& ndc, float screenWidth, float screenHeight) { // ND
     //return 0;
 //}
 
+constexpr int WINDOW_WIDTH = 800;
+constexpr int WINDOW_HEIGHT = 600;
+
+constexpr int PLAYER_WIDTH = 50;
+constexpr int PLAYER_HEIGHT = 50;
+
+// 墙体大小
+constexpr int WALL_WIDTH = 80;
+constexpr int WALL_HEIGHT = 200;
+
 float CalculateDeltaTime(Uint64& previousCounter, Uint64 performanceFrequency);
 
 bool ProcessInput(Vec2& direction);
 
 void UpdatePlayer(Vec2& playerPosition, const Vec2& direction, float playerSpeed, float deltaTime);
 
-void Render(SDL_Renderer* renderer, const Vec2& playerPosition);
+void Render(SDL_Renderer* renderer, const Vec2& playerPosition, const Vec2& wallPosition);
 
 void KeepPlayerInsideWindow(Vec2& playerPosition);
+
+float Length(const Vec2& vector) { // 斜方向位移
+    return std::sqrt(vector.x * vector.x + vector.y * vector.y);
+}
+
+Vec2 Normalize(const Vec2& vector) { // 归一化函数
+    float length = Length(vector);
+
+    if (length <= 0.0f) {
+        return Vec2{ 0.0f, 0.0f };
+    }
+
+    return Vec2{ vector.x / length, vector.y / length };
+}
 
 float CalculateDeltaTime(Uint64& previousCounter, Uint64 performanceFrequency) { // 上一次时间点 参数值每秒多少tick
     Uint64 currentCounter = SDL_GetPerformanceCounter(); // 读取当前时刻的高精度计时器读数，并存到一个 64 位无符号整数变量里
@@ -358,6 +383,8 @@ bool ProcessInput(Vec2& direction) {
         direction.x += 1.0f;
     }
 
+    direction = Normalize(direction);
+
     return true;
 }
 
@@ -366,16 +393,25 @@ void UpdatePlayer(Vec2& playerPosition, const Vec2& direction, float playerSpeed
     playerPosition.y += direction.y * playerSpeed * deltaTime;
 }
 
-void Render(SDL_Renderer* renderer, const Vec2& playerPosition) {
+void Render(SDL_Renderer* renderer, const Vec2& playerPosition, const Vec2& wallPosition) {
     SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255);
     SDL_RenderClear(renderer); // 清屏
+
+    SDL_Rect wallRect{
+        static_cast<int>(wallPosition.x) - WALL_WIDTH / 2,
+        static_cast<int>(wallPosition.y) - WALL_HEIGHT / 2,
+        WALL_WIDTH,
+        WALL_HEIGHT
+    };
+    SDL_SetRenderDrawColor(renderer, 220, 80, 80, 255);
+    SDL_RenderFillRect(renderer, &wallRect);
 
     constexpr int playerWidth = 50;
     constexpr int playerHeight = 50;
 
     SDL_Rect playerRect{ 
-        static_cast<int>(playerPosition.x) - playerWidth / 2, // 中心点横坐标
-        static_cast<int>(playerPosition.y) - playerHeight / 2, // 中心点纵坐标
+        static_cast<int>(playerPosition.x) - playerWidth / 2, // 矩形左上角坐标X部分
+        static_cast<int>(playerPosition.y) - playerHeight / 2, // 矩形左上角坐标Y部分
         playerWidth, // 宽
         playerHeight // 高
     };
@@ -385,12 +421,6 @@ void Render(SDL_Renderer* renderer, const Vec2& playerPosition) {
 
     SDL_RenderPresent(renderer); // 提交 显示到屏幕
 }
-
-constexpr int WINDOW_WIDTH = 800;
-constexpr int WINDOW_HEIGHT = 600;
-
-constexpr int PLAYER_WIDTH = 50;
-constexpr int PLAYER_HEIGHT = 50;
 
 float Clamp(float value, float minValue, float maxValue) {
     if (value < minValue) {
@@ -416,6 +446,16 @@ void KeepPlayerInsideWindow(Vec2& playerPosition) {
 
     playerPosition.x = Clamp(playerPosition.x, minX, maxX);
     playerPosition.y = Clamp(playerPosition.y, minY, maxY);
+}
+
+bool IsColliding(const Vec2& firstPosition, float firstWidth, float firstHeight, const Vec2& secondPosition, float secondWidth, float secondHeight) {
+    float distanceX = std::abs(firstPosition.x - secondPosition.x); // 两者X位置距离差值
+    float distanceY = std::abs(firstPosition.y - secondPosition.y);
+
+    float combinedHalfWidths = firstWidth * 0.5f + secondWidth * 0.5f; // first的半宽 + second的半宽
+    float combinedHalfHeights = firstHeight * 0.5f + secondHeight * 0.5f;
+
+    return distanceX < combinedHalfWidths && distanceY < combinedHalfHeights; // 两者X位置距离差值 < first的半宽 + second的半宽, Y同理
 }
 
 int main(int argc, char* argv[])
@@ -468,6 +508,7 @@ int main(int argc, char* argv[])
     std::cout << "SDL window created successfully!" << std::endl;
 
     Vec2 playerPosition{ 400.0f, 300.0f };
+    Vec2 wallPosition{ 600.0f, 300.0f }; // 墙体位置
 
     constexpr float playerSpeed = 300.0f;
 
@@ -477,6 +518,8 @@ int main(int argc, char* argv[])
     bool running = true;
 
     while (running) {
+        Vec2 previousPosition = playerPosition; // 保存移动前的位置副本
+
         float deltaTime = CalculateDeltaTime(
             previousCounter,
             performanceFrequency
@@ -499,7 +542,11 @@ int main(int argc, char* argv[])
 
         KeepPlayerInsideWindow(playerPosition);
 
-        Render(renderer, playerPosition);
+        if (IsColliding(playerPosition, PLAYER_WIDTH, PLAYER_HEIGHT, wallPosition, WALL_WIDTH, WALL_HEIGHT)) {
+            playerPosition = previousPosition;
+        }
+
+        Render(renderer, playerPosition, wallPosition);
 
         SDL_Delay(16);
     }
