@@ -458,6 +458,31 @@ bool IsColliding(const Vec2& firstPosition, float firstWidth, float firstHeight,
     return distanceX < combinedHalfWidths && distanceY < combinedHalfHeights; // 两者X位置距离差值 < first的半宽 + second的半宽, Y同理
 }
 
+void MovePlayerWithCollision(Vec2& playerPosition, const Vec2& direction, float playerSpeed, float deltaTime, const Vec2& wallPosition) {
+    float movementX = direction.x * playerSpeed * deltaTime; // 计算本帧X轴位移
+    float movementY = direction.y * playerSpeed * deltaTime;
+
+    float previousX = playerPosition.x; // 保存移动前的X
+
+    playerPosition.x += movementX; // 实现X轴的移动操作
+
+    KeepPlayerInsideWindow(playerPosition);
+
+    if (IsColliding(playerPosition, PLAYER_WIDTH, PLAYER_HEIGHT, wallPosition, WALL_WIDTH, WALL_HEIGHT)) {
+        playerPosition.x = previousX; // 检测到碰撞将之前保存的X位置再传给playerPosition.x
+    }
+
+    float previousY = playerPosition.y;
+
+    playerPosition.y += movementY;
+
+    KeepPlayerInsideWindow(playerPosition);
+
+    if (IsColliding(playerPosition, PLAYER_WIDTH, PLAYER_HEIGHT, wallPosition, WALL_WIDTH, WALL_HEIGHT)) {
+        playerPosition.y = previousY;
+    }
+}
+
 int main(int argc, char* argv[])
 {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -518,8 +543,6 @@ int main(int argc, char* argv[])
     bool running = true;
 
     while (running) {
-        Vec2 previousPosition = playerPosition; // 保存移动前的位置副本
-
         float deltaTime = CalculateDeltaTime(
             previousCounter,
             performanceFrequency
@@ -533,18 +556,7 @@ int main(int argc, char* argv[])
             break;
         }
 
-        UpdatePlayer(
-            playerPosition,
-            direction,
-            playerSpeed,
-            deltaTime
-        );
-
-        KeepPlayerInsideWindow(playerPosition);
-
-        if (IsColliding(playerPosition, PLAYER_WIDTH, PLAYER_HEIGHT, wallPosition, WALL_WIDTH, WALL_HEIGHT)) {
-            playerPosition = previousPosition;
-        }
+        MovePlayerWithCollision(playerPosition, direction, playerSpeed, deltaTime, wallPosition);
 
         Render(renderer, playerPosition, wallPosition);
 
