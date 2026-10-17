@@ -31,5 +31,9 @@ else()
     message(FATAL_ERROR "SDL2 static target was not created")
 endif()
 
+find_package(OpenGL REQUIRED)
+
 # 包含子项目。
 add_subdirectory ("MiniGameRuntime")
+
+

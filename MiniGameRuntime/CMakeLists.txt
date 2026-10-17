@@ -52,9 +52,8 @@ set_target_properties(MiniGameRuntime PROPERTIES
 message(STATUS "Building ${PROJECT_NAME} with C++${CMAKE_CXX_STANDARD}")
 message(STATUS "Source files: MiniGameRuntime.cpp, src/main.cpp, src/Vec2.cpp")
 
-
 if(TARGET SDL2::SDL2main)
     target_link_libraries(MiniGameRuntime PRIVATE SDL2::SDL2main)
 endif()
 
-target_link_libraries(MiniGameRuntime PRIVATE SDL2::SDL2-static)
+target_link_libraries(MiniGameRuntime PRIVATE SDL2::SDL2-static OpenGL::GL)
