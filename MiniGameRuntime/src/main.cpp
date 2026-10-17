@@ -329,7 +329,7 @@ bool ProcessInput(Vec2& direction);
 
 void UpdatePlayer(Vec2& playerPosition, const Vec2& direction, float playerSpeed, float deltaTime);
 
-void Render(SDL_Renderer* renderer, const Vec2& playerPosition, const Vec2& wallPosition);
+void Render(SDL_Renderer* renderer, const Vec2& playerPosition, const std::vector<Wall>& walls, bool playerCollided);
 
 void KeepPlayerInsideWindow(Vec2& playerPosition);
 
@@ -400,11 +400,11 @@ void UpdatePlayer(Vec2& playerPosition, const Vec2& direction, float playerSpeed
     playerPosition.y += direction.y * playerSpeed * deltaTime;
 }
 
-void Render(SDL_Renderer* renderer, const Vec2& playerPosition, const std::vector<Wall>& walls) {
-    SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255);
+void Render(SDL_Renderer* renderer, const Vec2& playerPosition, const std::vector<Wall>& walls, bool playerCollided) {
+    SDL_SetRenderDrawColor(renderer, 30, 30, 40, 255); // 背景色
     SDL_RenderClear(renderer); // 清屏
 
-    SDL_SetRenderDrawColor(renderer, 220, 80, 80, 255);
+    SDL_SetRenderDrawColor(renderer, 160, 160, 160, 255);
     for (const Wall& wall : walls) {
         SDL_Rect wallRect{
             static_cast<int>(wall.position.x - wall.width * 0.5f),
@@ -426,7 +426,15 @@ void Render(SDL_Renderer* renderer, const Vec2& playerPosition, const std::vecto
         playerHeight // 高
     };
 
-    SDL_SetRenderDrawColor(renderer, 60, 150, 255, 255);
+    if (playerCollided) {
+        // 碰撞时显示红色
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    }
+    else {
+        // 正常状态显示黄色
+        SDL_SetRenderDrawColor(renderer, 255, 220, 60, 255);
+    }
+
     SDL_RenderFillRect(renderer, &playerRect); // 填充
 
     SDL_RenderPresent(renderer); // 提交 显示到屏幕
@@ -478,7 +486,9 @@ const Wall* FindCollidingWall(const Vec2& playerPosition, const std::vector<Wall
     return nullptr;
 }
 
-void MovePlayerWithCollision(Vec2& playerPosition, const Vec2& direction, float playerSpeed, float deltaTime, const std::vector<Wall>& walls) {
+bool MovePlayerWithCollision(Vec2& playerPosition, const Vec2& direction, float playerSpeed, float deltaTime, const std::vector<Wall>& walls) {
+    bool collided = false;
+
     float movementX = direction.x * playerSpeed * deltaTime; // 计算本帧X轴位移
     float movementY = direction.y * playerSpeed * deltaTime;
 
@@ -489,6 +499,8 @@ void MovePlayerWithCollision(Vec2& playerPosition, const Vec2& direction, float 
     const Wall* collidedWall = FindCollidingWall(playerPosition, walls);
 
     if (collidedWall != nullptr) { // 碰到
+        collided = true;
+
         if (movementX > 0.0f) { // 本帧产生位移  玩家向右移动贴到左侧墙
             playerPosition.x = collidedWall->position.x - collidedWall->width * 0.5f - PLAYER_WIDTH * 0.5f;
         }
@@ -504,6 +516,8 @@ void MovePlayerWithCollision(Vec2& playerPosition, const Vec2& direction, float 
     collidedWall = FindCollidingWall(playerPosition, walls);
 
     if (collidedWall != nullptr) {
+        collided = true;
+
         if (movementY > 0.0f) { // 本帧产生位移  玩家向下移动贴到上侧墙
             playerPosition.y = collidedWall->position.y - collidedWall->height * 0.5f - PLAYER_HEIGHT * 0.5f;
         }
@@ -511,6 +525,8 @@ void MovePlayerWithCollision(Vec2& playerPosition, const Vec2& direction, float 
             playerPosition.y = collidedWall->position.y + collidedWall->height * 0.5f + PLAYER_HEIGHT * 0.5f;
         }
     }
+
+    return collided;
 }
 
 int main(int argc, char* argv[])
@@ -591,9 +607,9 @@ int main(int argc, char* argv[])
             break;
         }
 
-        MovePlayerWithCollision(playerPosition, direction, playerSpeed, deltaTime, walls);
+        bool playerCollided = MovePlayerWithCollision(playerPosition, direction, playerSpeed, deltaTime, walls);
 
-        Render(renderer, playerPosition, walls);
+        Render(renderer, playerPosition, walls, playerCollided);
 
         SDL_Delay(16);
     }
