@@ -468,38 +468,48 @@ bool IsColliding(const Vec2& firstPosition, float firstWidth, float firstHeight,
     return distanceX < combinedHalfWidths && distanceY < combinedHalfHeights; // 两者X位置距离差值 < first的半宽 + second的半宽, Y同理
 }
 
-bool IsCollidingWithAnyWall(const Vec2& playerPosition, const std::vector<Wall>& walls) {
+const Wall* FindCollidingWall(const Vec2& playerPosition, const std::vector<Wall>& walls) { // 碰到就返回墙的指针
     for (const Wall& wall : walls) {
         if (IsColliding(playerPosition, PLAYER_WIDTH, PLAYER_HEIGHT, wall.position, wall.width, wall.height)) {
-            return true;
+            return &wall;
         }
     }
 
-    return false;
+    return nullptr;
 }
 
 void MovePlayerWithCollision(Vec2& playerPosition, const Vec2& direction, float playerSpeed, float deltaTime, const std::vector<Wall>& walls) {
     float movementX = direction.x * playerSpeed * deltaTime; // 计算本帧X轴位移
     float movementY = direction.y * playerSpeed * deltaTime;
 
-    float previousX = playerPosition.x; // 保存移动前的X
-
     playerPosition.x += movementX; // 实现X轴的移动操作
 
     KeepPlayerInsideWindow(playerPosition);
 
-    if (IsCollidingWithAnyWall(playerPosition, walls)) {
-        playerPosition.x = previousX; // 检测到碰撞将之前保存的X位置再传给playerPosition.x
-    }
+    const Wall* collidedWall = FindCollidingWall(playerPosition, walls);
 
-    float previousY = playerPosition.y;
+    if (collidedWall != nullptr) { // 碰到
+        if (movementX > 0.0f) { // 本帧产生位移  玩家向右移动贴到左侧墙
+            playerPosition.x = collidedWall->position.x - collidedWall->width * 0.5f - PLAYER_WIDTH * 0.5f;
+        }
+        else if (movementX < 0.0f) { // 本帧产生位移  玩家左侧贴到墙的右侧 
+            playerPosition.x = collidedWall->position.x + collidedWall->width * 0.5f + PLAYER_WIDTH * 0.5f;
+        }
+    }
 
     playerPosition.y += movementY;
 
     KeepPlayerInsideWindow(playerPosition);
 
-    if (IsCollidingWithAnyWall(playerPosition, walls)) {
-        playerPosition.y = previousY;
+    collidedWall = FindCollidingWall(playerPosition, walls);
+
+    if (collidedWall != nullptr) {
+        if (movementY > 0.0f) { // 本帧产生位移  玩家向下移动贴到上侧墙
+            playerPosition.y = collidedWall->position.y - collidedWall->height * 0.5f - PLAYER_HEIGHT * 0.5f;
+        }
+        else if (movementY < 0.0f) { // 本帧产生位移  玩家向上移动贴到下侧墙
+            playerPosition.y = collidedWall->position.y + collidedWall->height * 0.5f + PLAYER_HEIGHT * 0.5f;
+        }
     }
 }
 
