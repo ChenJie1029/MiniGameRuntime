@@ -34,9 +34,12 @@ add_executable(MiniGameRuntime
 # 5. 指定头文件搜索路径
 # ============================================
 target_include_directories(MiniGameRuntime PRIVATE 
-    ${CMAKE_CURRENT_SOURCE_DIR}        # 根目录（找 MiniGameRuntime.h）
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${sdl2_SOURCE_DIR}/include
+
+    # GLAD 生成的头文件目录，主要用于让 IntelliSense 正确识别
+    ${CMAKE_BINARY_DIR}/gladsources/glad_gl_core_33/include
 )
 
 # ============================================
@@ -52,8 +55,18 @@ set_target_properties(MiniGameRuntime PROPERTIES
 message(STATUS "Building ${PROJECT_NAME} with C++${CMAKE_CXX_STANDARD}")
 message(STATUS "Source files: MiniGameRuntime.cpp, src/main.cpp, src/Vec2.cpp")
 
-if(TARGET SDL2::SDL2main)
-    target_link_libraries(MiniGameRuntime PRIVATE SDL2::SDL2main)
-endif()
+target_link_libraries(
+    MiniGameRuntime
+    PRIVATE
+    SDL2::SDL2-static
+    OpenGL::GL
+    glad_gl_core_33
+)
 
-target_link_libraries(MiniGameRuntime PRIVATE SDL2::SDL2-static OpenGL::GL)
+if(TARGET SDL2::SDL2main)
+    target_link_libraries(
+        MiniGameRuntime
+        PRIVATE
+        SDL2::SDL2main
+    )
+endif()

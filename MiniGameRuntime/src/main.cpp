@@ -1,7 +1,7 @@
 #include <iostream>
 
+#include <glad/gl.h>
 #include <SDL.h>
-#include <SDL_opengl.h>
 
 constexpr int WINDOW_WIDTH = 800;
 constexpr int WINDOW_HEIGHT = 600;
@@ -79,12 +79,57 @@ int main(int argc, char* argv[])
             << std::endl;
     }
 
+    int openGLVersion = gladLoadGL(
+        reinterpret_cast<GLADloadfunc>(
+            SDL_GL_GetProcAddress
+            )
+    );
+
+    if (openGLVersion == 0) {
+        std::cout
+            << "Failed to initialize GLAD!"
+            << std::endl;
+
+        SDL_GL_DeleteContext(openGLContext);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+
+        return 1;
+    }
+
+    std::cout
+        << "Loaded OpenGL "
+        << GLAD_VERSION_MAJOR(openGLVersion)
+        << "."
+        << GLAD_VERSION_MINOR(openGLVersion)
+        << std::endl;
+
     glViewport( // 告诉 OpenGL 最终图像应该输出到窗口中的哪块矩形区域
         0,
         0,
         WINDOW_WIDTH,
         WINDOW_HEIGHT
     );
+
+    constexpr float triangleVertices[] = {
+        // X      Y      Z
+        -0.5f, -0.5f,  0.0f,  // 左下
+         0.5f, -0.5f,  0.0f,  // 右下
+         0.0f,  0.5f,  0.0f   // 上方
+    };
+
+    constexpr int valuesPerVertex = 3;
+
+    constexpr int vertexCount =
+        static_cast<int>(
+            sizeof(triangleVertices) /
+            sizeof(triangleVertices[0])
+            ) / valuesPerVertex;
+
+    std::cout
+        << "Triangle vertex count: "
+        << vertexCount
+        << std::endl;
 
     bool running = true;
 

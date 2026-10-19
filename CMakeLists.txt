@@ -31,6 +31,23 @@ else()
     message(FATAL_ERROR "SDL2 static target was not created")
 endif()
 
+FetchContent_Declare(
+    glad
+    GIT_REPOSITORY https://github.com/Dav1dde/glad.git
+    GIT_TAG v2.0.6
+    GIT_SHALLOW TRUE
+    SOURCE_SUBDIR cmake
+)
+
+FetchContent_MakeAvailable(glad)
+
+glad_add_library(
+    glad_gl_core_33
+    STATIC
+    REPRODUCIBLE
+    API gl:core=3.3
+)
+
 find_package(OpenGL REQUIRED)
 
 # 包含子项目。
