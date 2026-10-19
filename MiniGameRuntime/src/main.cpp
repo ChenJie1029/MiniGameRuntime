@@ -120,11 +120,52 @@ int main(int argc, char* argv[])
 
     constexpr int valuesPerVertex = 3;
 
-    constexpr int vertexCount =
-        static_cast<int>(
+    constexpr GLsizei vertexCount =
+        static_cast<GLsizei>(
             sizeof(triangleVertices) /
-            sizeof(triangleVertices[0])
-            ) / valuesPerVertex;
+            sizeof(triangleVertices[0]) /
+            valuesPerVertex
+            );
+
+    // GLuint：OpenGL 用来表示对象编号的类型
+    GLuint vertexArrayObject = 0; // VAO:记录“顶点数据应该怎样读取”的配置
+    GLuint vertexBufferObject = 0; // VBO:显卡中的一块缓冲区，真正保存顶点数据 
+
+    glGenVertexArrays(1, &vertexArrayObject);
+    glGenBuffers(1, &vertexBufferObject);
+
+    // 绑定并上传数据
+    glBindVertexArray(vertexArrayObject);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
+
+    glBufferData(
+        GL_ARRAY_BUFFER, // 上传的是顶点数据
+        sizeof(triangleVertices), // 数据总字节数
+        triangleVertices, // CPU中的原始数据
+        GL_STATIC_DRAW // 上传后通常不会频繁修改
+    );
+
+    // 顶点排列方式
+    glVertexAttribPointer(
+        0, // 顶点属性位置 location = 0
+        valuesPerVertex, // 每个位置由x,y,z三个数构成
+        GL_FLOAT, // 每个数都是float
+        GL_FALSE, // 不进行归一化转换
+        valuesPerVertex * sizeof(float), // 相邻两个顶点之间的字节距离
+        nullptr // 第一个属性从缓冲区第0字节开始
+    );
+
+    glEnableVertexAttribArray(0);
+
+    // 解除绑定
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    // 输出对象编号
+    std::cout << "VAO: " << vertexArrayObject << std::endl;
+    std::cout << "VBO: " << vertexBufferObject << std::endl;
+    std::cout << "Vertex count: " << vertexCount << std::endl;
 
     std::cout
         << "Triangle vertex count: "
@@ -162,6 +203,10 @@ int main(int argc, char* argv[])
         // 将OpenGL绘制结果显示到窗口
         SDL_GL_SwapWindow(window);
     }
+
+    // 释放OpenGL对象
+    glDeleteBuffers(1, &vertexBufferObject);
+    glDeleteVertexArrays(1, &vertexArrayObject);
 
     SDL_GL_DeleteContext(openGLContext);
     SDL_DestroyWindow(window);
