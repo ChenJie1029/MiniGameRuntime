@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
             )
     );
 
-    if (openGLVersion == 0) {
+    if (openGLVersion == 0) { 
         std::cout
             << "Failed to initialize GLAD!"
             << std::endl;
