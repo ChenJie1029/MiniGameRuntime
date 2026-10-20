@@ -8,6 +8,36 @@ constexpr int WINDOW_HEIGHT = 600;
 
 int main(int argc, char* argv[])
 {
+    // ----------添加顶点着色器----------
+    const char* vertexShaderSource = R"glsl(
+#version 330 core
+
+layout(location = 0) in vec3 position;
+
+void main()
+{
+    gl_Position = vec4(position, 1.0);
+}
+)glsl";
+    // #version 330 core   使用GLSL 3.30核心模式，与OpenGL 3.3对应
+    // layout(location = 0) in vec3 position;   从VAO的属性位置0读取三个数 x、y、z
+    // gl_Position = vec4(position, 1.0);   将输入位置设置为顶点最终位置  gl_Position 要求四个分量x、y、z、w  所以将vec3转换成vec4(position, 1.0)
+
+    // ----------添加片段着色器----------
+    const char* fragmentShaderSource = R"glsl(
+#version 330 core
+
+out vec4 fragmentColor;
+
+void main()
+{
+    fragmentColor = vec4(0.2, 1.0, 0.3, 1.0);
+}
+)glsl";
+    // out vec4 fragmentColor;   声明最终输出颜色
+    // vec4(1.0, 0.5, 0.2, 1.0)  红 = 1.0，绿 = 0.5，蓝 = 0.2，透明度 = 1.0
+    // R"glsl(... )glsl" 是C++原始字符串，使我们可以直接在C++中保存多行着色器代码
+
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         std::cout
             << "SDL initialization failed: "
@@ -103,6 +133,40 @@ int main(int argc, char* argv[])
         << "."
         << GLAD_VERSION_MINOR(openGLVersion)
         << std::endl;
+
+    // ----------编译顶点着色器----------
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER); // 创建顶点着色器对象
+
+    glShaderSource( // 把源代码交给着色器对象
+        vertexShader,
+        1,
+        &vertexShaderSource,
+        nullptr
+    );
+
+    glCompileShader(vertexShader); //编译GPU程序 这是编译GLSL着色器，不是编译C++
+
+    // ----------编译片段着色器----------
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+
+    glShaderSource(
+        fragmentShader,
+        1,
+        &fragmentShaderSource,
+        nullptr
+    );
+
+    glCompileShader(fragmentShader);
+
+    // ----------链接Shader Program----------
+    GLuint shaderProgram = glCreateProgram(); // 创建着色器程序
+    glAttachShader(shaderProgram, vertexShader); // 把顶点着色器安装到程序上
+    glAttachShader(shaderProgram, fragmentShader); // 把片段着色器安装到程序上
+    glLinkProgram(shaderProgram); // 将它们连接成完整的GPU绘制程序
+
+    // ----------删除单独的着色器对象----------
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
 
     glViewport( // 告诉 OpenGL 最终图像应该输出到窗口中的哪块矩形区域
         0,
@@ -200,9 +264,18 @@ int main(int argc, char* argv[])
         // 清除颜色缓冲区
         glClear(GL_COLOR_BUFFER_BIT);
 
+        glUseProgram(shaderProgram); // 选择着色器程序  告诉OpenGL接下来的绘制使用这个着色器程序
+        glBindVertexArray(vertexArrayObject); // 选择VAO 恢复VAO中保存的顶点读取规则 VAO会告诉OpenGL：位置数据来自哪个VBO、每个顶点包含3个float、属性位置为0
+        glDrawArrays(GL_TRIANGLES, 0, vertexCount); // 发出绘制命令：按三角形方式绘制、从第0个顶点开始、一共读取3个顶点
+        glBindVertexArray(0); // 解除VAO绑定
+
         // 将OpenGL绘制结果显示到窗口
         SDL_GL_SwapWindow(window);
     }
+
+    // 释放Shader Program
+    glUseProgram(0);
+    glDeleteProgram(shaderProgram);
 
     // 释放OpenGL对象
     glDeleteBuffers(1, &vertexBufferObject);
