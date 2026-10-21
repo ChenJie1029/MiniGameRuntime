@@ -175,21 +175,43 @@ void main()
         WINDOW_HEIGHT
     );
 
-    constexpr float triangleVertices[] = {
+    //constexpr float triangleVertices[] = {
+    //    // X      Y      Z
+    //    -0.5f, -0.5f,  0.0f,  // 左下
+    //     0.5f, -0.5f,  0.0f,  // 右下
+    //     0.0f,  0.5f,  0.0f   // 上方
+    //};
+
+    //constexpr int valuesPerVertex = 3;
+
+    //constexpr GLsizei vertexCount =
+    //    static_cast<GLsizei>(
+    //        sizeof(triangleVertices) /
+    //        sizeof(triangleVertices[0]) /
+    //        valuesPerVertex
+    //        );
+
+    constexpr float rectangleVertices[] = {
+        // 第一个三角形
         // X      Y      Z
-        -0.5f, -0.5f,  0.0f,  // 左下
-         0.5f, -0.5f,  0.0f,  // 右下
-         0.0f,  0.5f,  0.0f   // 上方
+        -0.5f, -0.35f, 0.0f,  // 左下
+        0.5f, -0.35f, 0.0f,  // 右下
+        0.5f,  0.35f, 0.0f,  // 右上
+
+        // 第二个三角形
+        -0.5f, -0.35f, 0.0f,  // 左下
+        0.5f,  0.35f, 0.0f,  // 右上
+        -0.5f,  0.35f, 0.0f   // 左上
     };
 
     constexpr int valuesPerVertex = 3;
 
     constexpr GLsizei vertexCount =
         static_cast<GLsizei>(
-            sizeof(triangleVertices) /
-            sizeof(triangleVertices[0]) /
+            sizeof(rectangleVertices) /
+            sizeof(rectangleVertices[0]) /
             valuesPerVertex
-            );
+        );
 
     // GLuint：OpenGL 用来表示对象编号的类型
     GLuint vertexArrayObject = 0; // VAO:记录“顶点数据应该怎样读取”的配置
@@ -203,11 +225,18 @@ void main()
 
     glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
 
+    //glBufferData(
+    //    GL_ARRAY_BUFFER, // 上传的是顶点数据
+    //    sizeof(triangleVertices), // 数据总字节数
+    //    triangleVertices, // CPU中的原始数据
+    //    GL_STATIC_DRAW // 上传后通常不会频繁修改
+    //);
+
     glBufferData(
-        GL_ARRAY_BUFFER, // 上传的是顶点数据
-        sizeof(triangleVertices), // 数据总字节数
-        triangleVertices, // CPU中的原始数据
-        GL_STATIC_DRAW // 上传后通常不会频繁修改
+        GL_ARRAY_BUFFER,
+        sizeof(rectangleVertices),
+        rectangleVertices,
+        GL_STATIC_DRAW
     );
 
     // 顶点排列方式
