@@ -192,17 +192,21 @@ void main()
     //        );
 
     constexpr float rectangleVertices[] = {
-        // 第一个三角形
         // X      Y      Z
-        -0.5f, -0.35f, 0.0f,  // 左下
-        0.5f, -0.35f, 0.0f,  // 右下
-        0.5f,  0.35f, 0.0f,  // 右上
-
-        // 第二个三角形
-        -0.5f, -0.35f, 0.0f,  // 左下
-        0.5f,  0.35f, 0.0f,  // 右上
-        -0.5f,  0.35f, 0.0f   // 左上
+        -0.5f, -0.35f, 0.0f,  // 0: 左下
+        0.5f, -0.35f, 0.0f,   // 1: 右下
+        0.5f,  0.35f, 0.0f,   // 2: 右上
+        -0.5f,  0.35f, 0.0f   // 3: 左上
     };
+
+    // 索引数组 索引中的数字表示 使用的是第几个顶点
+    constexpr GLuint rectangleIndices[] = {
+        0, 1, 2, // 第一个三角形
+        0, 2, 3  // 第二个三角形
+    };
+
+    // 计算索引数量 6
+    constexpr GLsizei indexCount = static_cast<GLsizei>(sizeof(rectangleIndices) / sizeof(rectangleIndices[0]));
 
     constexpr int valuesPerVertex = 3;
 
@@ -216,13 +220,17 @@ void main()
     // GLuint：OpenGL 用来表示对象编号的类型
     GLuint vertexArrayObject = 0; // VAO:记录“顶点数据应该怎样读取”的配置
     GLuint vertexBufferObject = 0; // VBO:显卡中的一块缓冲区，真正保存顶点数据 
-
-    glGenVertexArrays(1, &vertexArrayObject);
-    glGenBuffers(1, &vertexBufferObject);
+    GLuint elementBufferObject = 0; // 创建EBO
+    
+    // 生成3个OpenGL对象
+    glGenVertexArrays(1, &vertexArrayObject); // VAO顶点数据读取规则
+    glGenBuffers(1, &vertexBufferObject); // 4个顶点的坐标数据
+    glGenBuffers(1, &elementBufferObject); // 组成三角形的顶点编号
 
     // 绑定并上传数据
+    // 选择VAO
     glBindVertexArray(vertexArrayObject);
-
+    // 把顶点坐标上传到VBO
     glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
 
     //glBufferData(
@@ -239,7 +247,7 @@ void main()
         GL_STATIC_DRAW
     );
 
-    // 顶点排列方式
+    // 顶点排列方式  告诉VAO如何读取VBO中的坐标
     glVertexAttribPointer(
         0, // 顶点属性位置 location = 0
         valuesPerVertex, // 每个位置由x,y,z三个数构成
@@ -251,6 +259,16 @@ void main()
 
     glEnableVertexAttribArray(0);
 
+    // 将索引上传到EBO
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferObject); // 将刚才创建的EBO绑定到GL_ELEMENT_ARRAY_BUFFER上
+
+    glBufferData(
+        GL_ELEMENT_ARRAY_BUFFER,
+        sizeof(rectangleIndices),
+        rectangleIndices,
+        GL_STATIC_DRAW
+    );
+
     // 解除绑定
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -258,6 +276,9 @@ void main()
     // 输出对象编号
     std::cout << "VAO: " << vertexArrayObject << std::endl;
     std::cout << "VBO: " << vertexBufferObject << std::endl;
+    std::cout << "EBO: " << elementBufferObject << std::endl;
+    std::cout << "Rectangle vertex count: " << vertexCount << std::endl;
+    std::cout << "Index count: " << indexCount << std::endl;
     std::cout << "Vertex count: " << vertexCount << std::endl;
 
     std::cout
@@ -295,7 +316,11 @@ void main()
 
         glUseProgram(shaderProgram); // 选择着色器程序  告诉OpenGL接下来的绘制使用这个着色器程序
         glBindVertexArray(vertexArrayObject); // 选择VAO 恢复VAO中保存的顶点读取规则 VAO会告诉OpenGL：位置数据来自哪个VBO、每个顶点包含3个float、属性位置为0
-        glDrawArrays(GL_TRIANGLES, 0, vertexCount); // 发出绘制命令：按三角形方式绘制、从第0个顶点开始、一共读取3个顶点
+
+        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr); //每三个索引组成一个三角形, 读取6个索引, 索引类型对应GLuint, 从EBO开头读取
+
+        // glDrawArrays(GL_TRIANGLES, 0, vertexCount); // 发出绘制命令：按三角形方式绘制、从第0个顶点开始、一共读取3个顶点
+
         glBindVertexArray(0); // 解除VAO绑定
 
         // 将OpenGL绘制结果显示到窗口
@@ -307,6 +332,7 @@ void main()
     glDeleteProgram(shaderProgram);
 
     // 释放OpenGL对象
+    glDeleteBuffers(1, &elementBufferObject);
     glDeleteBuffers(1, &vertexBufferObject);
     glDeleteVertexArrays(1, &vertexArrayObject);
 
