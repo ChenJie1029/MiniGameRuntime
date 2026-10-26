@@ -13,10 +13,14 @@ int main(int argc, char* argv[])
 #version 330 core
 
 layout(location = 0) in vec3 position;
+layout(location = 1) in vec3 color;
+
+out vec3 vertexColor;
 
 void main()
 {
     gl_Position = vec4(position, 1.0);
+    vertexColor = color;
 }
 )glsl";
     // #version 330 core   使用GLSL 3.30核心模式，与OpenGL 3.3对应
@@ -27,11 +31,13 @@ void main()
     const char* fragmentShaderSource = R"glsl(
 #version 330 core
 
+in vec3 vertexColor;
+
 out vec4 fragmentColor;
 
 void main()
 {
-    fragmentColor = vec4(0.2, 1.0, 0.3, 1.0);
+    fragmentColor = vec4(vertexColor, 1.0);
 }
 )glsl";
     // out vec4 fragmentColor;   声明最终输出颜色
@@ -192,11 +198,11 @@ void main()
     //        );
 
     constexpr float rectangleVertices[] = {
-        // X      Y      Z
-        -0.5f, -0.35f, 0.0f,  // 0: 左下
-        0.5f, -0.35f, 0.0f,   // 1: 右下
-        0.5f,  0.35f, 0.0f,   // 2: 右上
-        -0.5f,  0.35f, 0.0f   // 3: 左上
+        // 位置：X      Y      Z    颜色：R   G   B
+        -0.5f, -0.35f, 0.0f, 1.0, 0.0f, 0.0f,  // 0: 左下  红
+        0.5f, -0.35f, 0.0f, 0.0f, 1.0f, 0.0f,  // 1: 右下  绿
+        0.5f, 0.35f, 0.0f, 0.0f, 0.0f, 1.0f,   // 2: 右上  蓝
+        -0.5f, 0.35f, 0.0f, 1.0f, 1.0f, 0.0f   // 3: 左上  黄
     };
 
     // 索引数组 索引中的数字表示 使用的是第几个顶点
@@ -208,7 +214,9 @@ void main()
     // 计算索引数量 6
     constexpr GLsizei indexCount = static_cast<GLsizei>(sizeof(rectangleIndices) / sizeof(rectangleIndices[0]));
 
-    constexpr int valuesPerVertex = 3;
+    constexpr int valuesPerVertex = 6;
+
+    constexpr GLsizei vertexStride = valuesPerVertex * sizeof(float); // 从当前顶点开头到移动到下一个顶点开头需要跨过多少字节
 
     constexpr GLsizei vertexCount =
         static_cast<GLsizei>(
@@ -247,17 +255,28 @@ void main()
         GL_STATIC_DRAW
     );
 
-    // 顶点排列方式  告诉VAO如何读取VBO中的坐标
     glVertexAttribPointer(
-        0, // 顶点属性位置 location = 0
-        valuesPerVertex, // 每个位置由x,y,z三个数构成
-        GL_FLOAT, // 每个数都是float
-        GL_FALSE, // 不进行归一化转换
-        valuesPerVertex * sizeof(float), // 相邻两个顶点之间的字节距离
-        nullptr // 第一个属性从缓冲区第0字节开始
+        0,                  // 对应着色器的 location = 0
+        3,                  // X、Y、Z
+        GL_FLOAT,
+        GL_FALSE,
+        vertexStride,
+        nullptr             // 从每个顶点的第0字节开始
     );
 
     glEnableVertexAttribArray(0);
+
+    // 顶点排列方式  告诉VAO如何读取VBO中的坐标
+    glVertexAttribPointer(
+        1, // 顶点属性位置 location = 1
+        3, // 每个位置由x,y,z三个数构成
+        GL_FLOAT, // 每个数都是float
+        GL_FALSE, // 不进行归一化转换
+        vertexStride, // 相邻两个顶点之间的字节距离
+        reinterpret_cast<void*>(3 * sizeof(float))
+    );
+
+    glEnableVertexAttribArray(1);
 
     // 将索引上传到EBO
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferObject); // 将刚才创建的EBO绑定到GL_ELEMENT_ARRAY_BUFFER上
