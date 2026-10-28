@@ -16,15 +16,14 @@ const char* vertexShaderSource = R"glsl(
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 color;
 
-uniform vec2 objectOffset;
+uniform mat4 modelMatrix;
 
 out vec3 vertexColor;
 
 void main()
 {
-    vec2 movePosition = position.xy + objectOffset;
+    gl_Position = modelMatrix * vec4(position, 1.0);    
 
-    gl_Position = vec4(movePosition, position.z, 1.0);
     vertexColor = color;
 }
 )glsl";
@@ -175,11 +174,11 @@ void main()
     glAttachShader(shaderProgram, fragmentShader); // 把片段着色器安装到程序上
     glLinkProgram(shaderProgram); // 将它们连接成完整的GPU绘制程序
 
-    // glGetUniformLocation在指定ShaderProgram中查找名为objectOffset的变量，并返回它的位置编号是objectOffsetLocation类型
-    GLint objectOffsetLocation = glGetUniformLocation(shaderProgram, "objectOffset"); // 存在于顶点着色器中 uniform vec2 objectOffset;
+    // glGetUniformLocation在指定ShaderProgram中查找名为modelMatrix的变量，并返回它的位置编号是modelMatrixLocation类型
+    GLint modelMatrixLocation = glGetUniformLocation(shaderProgram, "modelMatrix");  // 存在于顶点着色器中 uniform mat4 modelMatrix;
     // 检查是否找到
-    if (objectOffsetLocation == -1) {
-        std::cout << "Failed to find objectOffset uniform!" << std::endl;
+    if (modelMatrixLocation == -1) {
+        std::cout << "Failed to find modelMatrix uniform!" << std::endl;
     }
 
     // ----------删除单独的着色器对象----------
@@ -383,6 +382,17 @@ void main()
         objectOffsetX += directionX * moveSpeed * deltaTime;
         objectOffsetY += directionY * moveSpeed * deltaTime;
 
+        const GLfloat modelMatrix[16] = {
+            // 第0列
+            1.0f, 0.0f, 0.0f, 0.0f,
+            // 第一列
+            0.0f, 1.0f, 0.0f, 0.0f,
+            // 第二列
+            0.0f, 0.0f, 1.0f, 0.0f,
+            // 第三列 平移
+            objectOffsetX, objectOffsetY, 0.0f, 1.0f
+        };
+
         // 指定OpenGL清屏颜色 OpenGL颜色范围是：0.0 ～ 1.0  红、绿、蓝、透明度
         glClearColor(
             0.12f,
@@ -396,7 +406,8 @@ void main()
 
         glUseProgram(shaderProgram); // 选择着色器程序  告诉OpenGL接下来的绘制使用这个着色器程序
 
-        glUniform2f(objectOffsetLocation, objectOffsetX, objectOffsetY); // 修改uniform变量 传入两个数 两个数都是float
+        // glUniform2f(objectOffsetLocation, objectOffsetX, objectOffsetY); // 修改uniform变量 传入两个数 两个数都是float
+        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, modelMatrix); // Shader中modelMatrix的位置  发送一个矩阵  不转置矩阵  CPU端保存矩阵数据的数组
 
         glBindVertexArray(vertexArrayObject); // 选择VAO 恢复VAO中保存的顶点读取规则 VAO会告诉OpenGL：位置数据来自哪个VBO、每个顶点包含3个float、属性位置为0
 
