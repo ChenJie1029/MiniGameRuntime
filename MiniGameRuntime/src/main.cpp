@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cmath>
 
 #include <glad/gl.h>
 #include <SDL.h>
@@ -322,36 +323,65 @@ void main()
     float objectOffsetX = 0.0f; //保存水平方向的偏移量，初始为 0
     float objectOffsetY = 0.0f; //保存垂直方向的偏移量，初始为 0
 
-    constexpr float moveStep = 0.1f; //定义一个编译时常量 moveStep，值为 0.1f，用于表示每次执行移动更新时增加或减少多少
+    // constexpr float moveStep = 0.1f; //定义一个编译时常量 moveStep，值为 0.1f，用于表示每次执行移动更新时增加或减少多少
+    constexpr float moveSpeed = 0.8f;
+
+    // 添加计时器
+    const Uint64 performanceFrequency = SDL_GetPerformanceFrequency(); // 计时器每秒计数多少次
+    Uint64 previousCounter = SDL_GetPerformanceCounter(); // 取计数器当前的读数，保存到previousCounter，作为之后计算时间差的起点
 
     while (running) {
+        Uint64 currentCounter = SDL_GetPerformanceCounter(); // 取计数器当前的度数，保存到currentCounter，用于计算和previousCounter的差值
+        float deltaTime = static_cast<float>(currentCounter - previousCounter) / static_cast<float>(performanceFrequency); // 计数差值 / 计数频率 = 具体经过时间
+
+        previousCounter = currentCounter;
+
         SDL_Event event;
 
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 running = false;
             }
-            else if (event.type == SDL_KEYDOWN && event.key.repeat == 0) { // event.key.repeat == 0：要求这次按键事件不是长按产生的自动重复事件
-                switch (event.key.keysym.sym) { // event.key.keysym.sym 保存这次事件对应的具体键码
-                case SDLK_w:
-                    objectOffsetY += moveStep;
-                    break;
-                case SDLK_s:
-                    objectOffsetY -= moveStep;
-                    break;
-                case SDLK_a:
-                    objectOffsetX -= moveStep;
-                    break;
-                case SDLK_d:
-                    objectOffsetX += moveStep;
-                    break;
-                case SDLK_ESCAPE:
-                    running = false;
-                    break;
-                }
+            else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
+                running = false;
             }
-            
         }
+
+        if (!running) {
+            break;
+        }
+
+        const Uint8* keyboardState = SDL_GetKeyboardState(nullptr); // 第一行是取得键盘按键状态表的地址 1：这个键正被按住 0：这个键没有被按住
+
+        // 后两行是准备保存当前想移动的方向，初始都为0
+        float directionX = 0.0f;
+        float directionY = 0.0f;
+
+        if (keyboardState[SDL_SCANCODE_W]) {
+            directionY += 1.0f;
+        }
+
+        if (keyboardState[SDL_SCANCODE_S]) {
+            directionY -= 1.0f;
+        }
+
+        if (keyboardState[SDL_SCANCODE_A]) {
+            directionX -= 1.0f;
+        }
+
+        if (keyboardState[SDL_SCANCODE_D]) {
+            directionX += 1.0f;
+        }
+
+        // 加入归一化操作确保斜向速度和正向速度保持一致
+        float directionLength = std::sqrt(directionX * directionX + directionY * directionY);
+        if (directionLength > 0.0f) {
+            directionX /= directionLength;
+            directionY /= directionLength;
+        }
+
+        objectOffsetX += directionX * moveSpeed * deltaTime;
+        objectOffsetY += directionY * moveSpeed * deltaTime;
 
         // 指定OpenGL清屏颜色 OpenGL颜色范围是：0.0 ～ 1.0  红、绿、蓝、透明度
         glClearColor(
