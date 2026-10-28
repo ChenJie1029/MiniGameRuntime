@@ -260,10 +260,10 @@ void main()
     //);
 
     glBufferData(
-        GL_ARRAY_BUFFER,
-        sizeof(rectangleVertices),
-        rectangleVertices,
-        GL_STATIC_DRAW
+        GL_ARRAY_BUFFER, // 操作哪个绑定目标上的缓冲区
+        sizeof(rectangleVertices), // 数据有多少字节
+        rectangleVertices, // 从哪里读取原始数据
+        GL_STATIC_DRAW  // 预计如何使用这些数据
     );
 
     glVertexAttribPointer(
