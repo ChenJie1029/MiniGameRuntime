@@ -61,16 +61,19 @@ const char* vertexShaderSource = R"glsl(
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 color;
+layout(location = 2) in vec2 textureCoordinate;
 
 uniform mat4 modelMatrix;
 
 out vec3 vertexColor;
+out vec2 textureUV;
 
 void main()
 {
     gl_Position = modelMatrix * vec4(position, 1.0);    
 
     vertexColor = color;
+    textureUV = textureCoordinate;
 }
 )glsl";
     // #version 330 core   使用GLSL 3.30核心模式，与OpenGL 3.3对应
@@ -82,17 +85,21 @@ const char* fragmentShaderSource = R"glsl(
 #version 330 core
 
 in vec3 vertexColor;
+in vec2 textureUV;
+
+uniform sampler2D objectTexture;
 
 out vec4 fragmentColor;
 
 void main()
 {
-    fragmentColor = vec4(vertexColor, 1.0);
+    fragmentColor = texture(objectTexture, textureUV);
 }
 )glsl";
     // out vec4 fragmentColor;   声明最终输出颜色
     // vec4(1.0, 0.5, 0.2, 1.0)  红 = 1.0，绿 = 0.5，蓝 = 0.2，透明度 = 1.0
     // R"glsl(... )glsl" 是C++原始字符串，使我们可以直接在C++中保存多行着色器代码
+    // fragmentColor = texture(objectTexture, textureUV);  使用当前像素的UV坐标，从 objectTexture 中读取颜色    objectTexture指定从哪张纹理取样   textureUV指定取样位置
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         std::cout
@@ -255,12 +262,47 @@ void main()
     //        );
 
     constexpr float rectangleVertices[] = {
-        // 位置：X      Y      Z    颜色：R   G   B
-        -0.5f, -0.35f, 0.0f, 1.0, 0.0f, 0.0f,  // 0: 左下  红
-        0.5f, -0.35f, 0.0f, 0.0f, 1.0f, 0.0f,  // 1: 右下  绿
-        0.5f, 0.35f, 0.0f, 0.0f, 0.0f, 1.0f,   // 2: 右上  蓝
-        -0.5f, 0.35f, 0.0f, 1.0f, 1.0f, 0.0f   // 3: 左上  黄
+        // 位置：X      Y      Z    颜色：R   G   B   // UV
+        -0.5f, -0.35f, 0.0f, 1.0, 0.0f, 0.0f, 0.0f, 0.0f,  // 0: 左下  红
+        0.5f, -0.35f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // 1: 右下  绿
+        0.5f, 0.35f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,   // 2: 右上  蓝
+        -0.5f, 0.35f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f   // 3: 左上  黄
     };
+
+    const unsigned char texturePixels[] = { // 这是四个RGBA像素  用四个像素，制作并上传一张 2×2 的彩色纹理，同时规定它放大、缩小时如何取颜色
+        255,   0,   0, 255,     0, 255,   0, 255,
+          0,   0, 255, 255,   255, 255,   0, 255
+    };
+
+    GLuint texture = 0; // 准备一个无符号整数变量texture，用于保存纹理编号
+    glGenTextures(1, &texture); // 申请一个纹理编号，并写入texture
+    glBindTexture(GL_TEXTURE_2D, texture); // 把这个编号对应的纹理绑定为当前操作的二维纹理。之后针对 GL_TEXTURE_2D 的参数设置和图片上传，就作用于它
+
+    // 设置纹理的取样规则
+    glTexParameteri(
+        GL_TEXTURE_2D,
+        GL_TEXTURE_MIN_FILTER, // 纹理显示得比较小时，怎样取颜色
+        GL_NEAREST // 直接采用距离取样位置最近的纹理像素的颜色
+    );
+
+    glTexParameteri(
+        GL_TEXTURE_2D,
+        GL_TEXTURE_MAG_FILTER, // 纹理显示得比较大时，怎样取颜色
+        GL_NEAREST
+    );
+
+    // 创建一张宽2、高2、每个像素使用RGBA格式的二维纹理，并上传texturePixels 定义纹理图片的尺寸、存储格式，并上传像素数据
+    glTexImage2D(
+        GL_TEXTURE_2D, // 操作当前绑定的二维纹理
+        0, // 设置第 0 层，也就是基础图像层
+        GL_RGBA, // 指定纹理内部保存红、绿、蓝、Alpha 分量
+        2, // 图片宽度为 2 个像素
+        2, // 图片高度为 2 个像素
+        0, // 保留的边框参数，必须为 0
+        GL_RGBA, // 原始数据按 R、G、B、A 的顺序排列
+        GL_UNSIGNED_BYTE, // 原始数据的每个分量是一个无符号字节
+        texturePixels // 从这个数组中读取像素数据
+    );
 
     // 索引数组 索引中的数字表示 使用的是第几个顶点
     constexpr GLuint rectangleIndices[] = {
@@ -271,7 +313,7 @@ void main()
     // 计算索引数量 6
     constexpr GLsizei indexCount = static_cast<GLsizei>(sizeof(rectangleIndices) / sizeof(rectangleIndices[0]));
 
-    constexpr int valuesPerVertex = 6;
+    constexpr int valuesPerVertex = 8;
 
     constexpr GLsizei vertexStride = valuesPerVertex * sizeof(float); // 从当前顶点开头到移动到下一个顶点开头需要跨过多少字节
 
@@ -281,6 +323,11 @@ void main()
             sizeof(rectangleVertices[0]) /
             valuesPerVertex
         );
+
+    GLint textureLocation = glGetUniformLocation(shaderProgram, "objectTexture");
+
+    glUseProgram(shaderProgram);
+    glUniform1i(textureLocation, 0);
 
     // GLuint：OpenGL 用来表示对象编号的类型
     GLuint vertexArrayObject = 0; // VAO:记录“顶点数据应该怎样读取”的配置
@@ -320,7 +367,6 @@ void main()
         vertexStride,
         nullptr             // 从每个顶点的第0字节开始
     );
-
     glEnableVertexAttribArray(0);
 
     // 顶点排列方式  告诉VAO如何读取VBO中的坐标
@@ -332,8 +378,17 @@ void main()
         vertexStride, // 相邻两个顶点之间的字节距离
         reinterpret_cast<void*>(3 * sizeof(float))
     );
-
     glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(
+        2,
+        2,
+        GL_FLOAT,
+        GL_FALSE,
+        vertexStride,
+        reinterpret_cast<void*>(6 * sizeof(float))
+    );
+    glEnableVertexAttribArray(2);
 
     // 将索引上传到EBO
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferObject); // 将刚才创建的EBO绑定到GL_ELEMENT_ARRAY_BUFFER上
@@ -443,6 +498,9 @@ void main()
         // 清除颜色缓冲区
         glClear(GL_COLOR_BUFFER_BIT);
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+
         glUseProgram(shaderProgram); // 选择着色器程序  告诉OpenGL接下来的绘制使用这个着色器程序
 
         // glUniform2f(objectOffsetLocation, objectOffsetX, objectOffsetY); // 修改uniform变量 传入两个数 两个数都是float
@@ -468,6 +526,7 @@ void main()
     glDeleteBuffers(1, &elementBufferObject);
     glDeleteBuffers(1, &vertexBufferObject);
     glDeleteVertexArrays(1, &vertexArrayObject);
+    glDeleteTextures(1, &texture);
 
     SDL_GL_DeleteContext(openGLContext);
     SDL_DestroyWindow(window);
