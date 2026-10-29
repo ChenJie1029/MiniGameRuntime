@@ -7,6 +7,52 @@
 constexpr int WINDOW_WIDTH = 800;
 constexpr int WINDOW_HEIGHT = 600;
 
+float objectOffsetX = 0.0f;
+float objectOffsetY = 0.0f;
+float objectRotation = 0.0f;
+
+constexpr float objectScaleX = 0.8f;
+constexpr float objectScaleY = 0.5f;
+
+constexpr float moveSpeed = 1.0f;
+constexpr float rotationSpeed = 1.0f;
+
+struct Mat4 {
+    float values[16];
+};
+
+Mat4 CreateModelMatrix(float positionX, float positionY, float rotationRadians, float scaleX, float scaleY)
+{ // 控制X平移  控制Y平移  控制旋转  控制X缩放  控制Y缩放
+    float cosine = std::cos(rotationRadians); // 进一步控制旋转
+    float sine = std::sin(rotationRadians);
+
+    Mat4 matrix{
+        {
+            cosine * scaleX,
+            sine * scaleX,
+            0.0f,
+            0.0f,
+
+            -sine * scaleY,
+            cosine * scaleY,
+            0.0f,
+            0.0f,
+
+            0.0f,
+            0.0f,
+            1.0f,
+            0.0f,
+
+            positionX,
+            positionY,
+            0.0f,
+            1.0f
+        }
+    };
+
+    return matrix;
+}
+
 int main(int argc, char* argv[])
 {
     // ----------添加顶点着色器----------
@@ -382,16 +428,9 @@ void main()
         objectOffsetX += directionX * moveSpeed * deltaTime;
         objectOffsetY += directionY * moveSpeed * deltaTime;
 
-        const GLfloat modelMatrix[16] = {
-            // 第0列
-            1.0f, 0.0f, 0.0f, 0.0f,
-            // 第一列
-            0.0f, 1.0f, 0.0f, 0.0f,
-            // 第二列
-            0.0f, 0.0f, 1.0f, 0.0f,
-            // 第三列 平移
-            objectOffsetX, objectOffsetY, 0.0f, 1.0f
-        };
+        objectRotation += rotationSpeed * deltaTime; // 物体持续旋转
+
+        Mat4 modelMatrix = CreateModelMatrix(objectOffsetX, objectOffsetY, objectRotation, objectScaleX, objectScaleY);
 
         // 指定OpenGL清屏颜色 OpenGL颜色范围是：0.0 ～ 1.0  红、绿、蓝、透明度
         glClearColor(
@@ -407,7 +446,7 @@ void main()
         glUseProgram(shaderProgram); // 选择着色器程序  告诉OpenGL接下来的绘制使用这个着色器程序
 
         // glUniform2f(objectOffsetLocation, objectOffsetX, objectOffsetY); // 修改uniform变量 传入两个数 两个数都是float
-        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, modelMatrix); // Shader中modelMatrix的位置  发送一个矩阵  不转置矩阵  CPU端保存矩阵数据的数组
+        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, modelMatrix.values); // Shader中modelMatrix的位置  发送一个矩阵  不转置矩阵  CPU端保存矩阵数据的数组
 
         glBindVertexArray(vertexArrayObject); // 选择VAO 恢复VAO中保存的顶点读取规则 VAO会告诉OpenGL：位置数据来自哪个VBO、每个顶点包含3个float、属性位置为0
 
