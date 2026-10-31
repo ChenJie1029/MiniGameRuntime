@@ -30,6 +30,12 @@ add_executable(MiniGameRuntime
     src/Gameplay/CharacterStateMachine.cpp
     src/Core/EventBus.cpp  "src/demos/LifetimeDemo.cpp" "include/Core/ObjectPool.h" "include/Core/Timer.h" "src/Core/Timer.cpp" "src/Benchmark/BenchmarkEntity.h" "src/Benchmark/MovementBenchmark.h" "src/Benchmark/CollisionBenchmark.h")
 
+    target_compile_definitions(
+        MiniGameRuntime
+        PRIVATE
+        MGR_ASSET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets/"
+)
+
 # ============================================
 # 5. 指定头文件搜索路径
 # ============================================
@@ -60,6 +66,11 @@ target_link_libraries(
     PRIVATE
     SDL2::SDL2-static
     OpenGL::GL
+    glad_gl_core_33
+)
+
+add_dependencies(
+    MiniGameRuntime
     glad_gl_core_33
 )
 

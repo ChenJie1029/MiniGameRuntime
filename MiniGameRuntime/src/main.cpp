@@ -1,21 +1,18 @@
 #include <iostream>
 #include <cmath>
+#include <string>
 
 #include <glad/gl.h>
 #include <SDL.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "ThirdParty/stb_image.h"
+
 constexpr int WINDOW_WIDTH = 800;
 constexpr int WINDOW_HEIGHT = 600;
 
-float objectOffsetX = 0.0f;
-float objectOffsetY = 0.0f;
-float objectRotation = 0.0f;
-
 constexpr float objectScaleX = 0.8f;
 constexpr float objectScaleY = 0.5f;
-
-constexpr float moveSpeed = 1.0f;
-constexpr float rotationSpeed = 1.0f;
 
 struct Mat4 {
     float values[16];
@@ -269,10 +266,42 @@ void main()
         -0.5f, 0.35f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f   // 3: 左上  黄
     };
 
-    const unsigned char texturePixels[] = { // 这是四个RGBA像素  用四个像素，制作并上传一张 2×2 的彩色纹理，同时规定它放大、缩小时如何取颜色
-        255,   0,   0, 255,     0, 255,   0, 255,
-          0,   0, 255, 255,   255, 255,   0, 255
-    };
+    const std::string texturePath = std::string(MGR_ASSET_DIR) + "test.png"; // 拼接图片路径
+
+    stbi_set_flip_vertically_on_load(true); // 设置加载选项，接下来读取图片时把像素行上下翻转，让返回数据从图片底部开始排列，方便配合前面使用的 OpenGL 纹理坐标约定
+
+    // 准备三个变量，供加载函数填写结果
+    int textureWidth = 0; // 图片宽度
+    int textureHeight = 0; // 图片高度
+    int textureChannels = 0; // 原始图片通道数
+
+    unsigned char* texturePixels = stbi_load( // stbi_load负责读取并解码图片  函数返回像素数据的起始地址，保存到 texturePixels
+        texturePath.c_str(), // 提供路径字符串的 const char* 地址
+        &textureWidth,
+        &textureHeight,
+        &textureChannels,
+        STBI_rgb_alpha // 要求返回的像素统一使用RGBA四通道格式
+    );
+
+    if (texturePixels == nullptr) {
+        std::cout
+            << "Failed to load texture: "
+            << texturePath
+            << std::endl;
+
+        std::cout
+            << "Reason: "
+            << stbi_failure_reason()
+            << std::endl;
+
+        glDeleteProgram(shaderProgram); // 	请求删除之前创建的着色器程序，释放其资源
+
+        SDL_GL_DeleteContext(openGLContext);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+
+        return 1;
+    }
 
     GLuint texture = 0; // 准备一个无符号整数变量texture，用于保存纹理编号
     glGenTextures(1, &texture); // 申请一个纹理编号，并写入texture
@@ -281,28 +310,57 @@ void main()
     // 设置纹理的取样规则
     glTexParameteri(
         GL_TEXTURE_2D,
+        GL_TEXTURE_WRAP_S,
+        GL_REPEAT
+    );
+
+    glTexParameteri(
+        GL_TEXTURE_2D,
+        GL_TEXTURE_WRAP_T,
+        GL_REPEAT
+    );
+
+    glTexParameteri(
+        GL_TEXTURE_2D,
         GL_TEXTURE_MIN_FILTER, // 纹理显示得比较小时，怎样取颜色
-        GL_NEAREST // 直接采用距离取样位置最近的纹理像素的颜色
+        GL_LINEAR_MIPMAP_LINEAR 
     );
 
     glTexParameteri(
         GL_TEXTURE_2D,
         GL_TEXTURE_MAG_FILTER, // 纹理显示得比较大时，怎样取颜色
-        GL_NEAREST
+        GL_LINEAR
     );
 
     // 创建一张宽2、高2、每个像素使用RGBA格式的二维纹理，并上传texturePixels 定义纹理图片的尺寸、存储格式，并上传像素数据
+    //glTexImage2D(
+    //    GL_TEXTURE_2D, // 操作当前绑定的二维纹理
+    //    0, // 设置第 0 层，也就是基础图像层
+    //    GL_RGBA, // 指定纹理内部保存红、绿、蓝、Alpha 分量
+    //    2, // 图片宽度为 2 个像素
+    //    2, // 图片高度为 2 个像素
+    //    0, // 保留的边框参数，必须为 0
+    //    GL_RGBA, // 原始数据按 R、G、B、A 的顺序排列
+    //    GL_UNSIGNED_BYTE, // 原始数据的每个分量是一个无符号字节
+    //    texturePixels // 从这个数组中读取像素数据
+    //);
+
+    // 上传图片
     glTexImage2D(
         GL_TEXTURE_2D, // 操作当前绑定的二维纹理
-        0, // 设置第 0 层，也就是基础图像层
-        GL_RGBA, // 指定纹理内部保存红、绿、蓝、Alpha 分量
-        2, // 图片宽度为 2 个像素
-        2, // 图片高度为 2 个像素
-        0, // 保留的边框参数，必须为 0
-        GL_RGBA, // 原始数据按 R、G、B、A 的顺序排列
-        GL_UNSIGNED_BYTE, // 原始数据的每个分量是一个无符号字节
-        texturePixels // 从这个数组中读取像素数据
+        0, // 上传到第 0 层：原始图像层
+        GL_RGBA, // 纹理内部保存 RGBA 分量
+        textureWidth, // 图片实际宽度
+        textureHeight, // 图片实际高度
+        0, // 边框参数，必须为 0
+        GL_RGBA, // 传入像素按 R、G、B、A 排列
+        GL_UNSIGNED_BYTE, // 每个分量是一个无符号字节
+        texturePixels // 从这个地址读取像素数据
     );
+
+    glGenerateMipmap(GL_TEXTURE_2D); // 为当前二维纹理生成 mipmap，也就是同一张图片的一组逐级缩小版本
+
+    stbi_image_free(texturePixels); // 释放 stbi_load() 为图片分配的 CPU 内存
 
     // 索引数组 索引中的数字表示 使用的是第几个顶点
     constexpr GLuint rectangleIndices[] = {
@@ -422,9 +480,11 @@ void main()
     // 这两个变量位于CPU中，用来记录矩形当前移动了多少
     float objectOffsetX = 0.0f; //保存水平方向的偏移量，初始为 0
     float objectOffsetY = 0.0f; //保存垂直方向的偏移量，初始为 0
+    float objectRotation = 0.0f;
 
     // constexpr float moveStep = 0.1f; //定义一个编译时常量 moveStep，值为 0.1f，用于表示每次执行移动更新时增加或减少多少
     constexpr float moveSpeed = 0.8f;
+    constexpr float rotationSpeed = 1.0f;
 
     // 添加计时器
     const Uint64 performanceFrequency = SDL_GetPerformanceFrequency(); // 计时器每秒计数多少次
