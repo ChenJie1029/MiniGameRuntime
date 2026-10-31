@@ -242,6 +242,10 @@ void main()
         WINDOW_HEIGHT
     );
 
+    glEnable(GL_BLEND); // 启用颜色混合，允许当前片元的颜色与画面中已有的背景颜色混合
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // 这句规定混合比例(当前片元颜色乘以自己的Alpha, 背景颜色乘以 1−当前片元的Alpha)    最终颜色 = 当前颜色×Alpha + 背景颜色×(1 − Alpha)
+
     //constexpr float triangleVertices[] = {
     //    // X      Y      Z
     //    -0.5f, -0.5f,  0.0f,  // 左下
@@ -307,7 +311,7 @@ void main()
     glGenTextures(1, &texture); // 申请一个纹理编号，并写入texture
     glBindTexture(GL_TEXTURE_2D, texture); // 把这个编号对应的纹理绑定为当前操作的二维纹理。之后针对 GL_TEXTURE_2D 的参数设置和图片上传，就作用于它
 
-    // 设置纹理的取样规则
+    // 设置纹理的取样规则  设置纹理的边界处理方式：当 UV 超出图片范围时，使用最近的边缘颜色
     glTexParameteri(
         GL_TEXTURE_2D,
         GL_TEXTURE_WRAP_S,
