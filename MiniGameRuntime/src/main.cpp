@@ -24,6 +24,10 @@ struct Sprite {
     GLuint textureId;
 };
 
+struct Camera2D {
+    Vec2 position;
+};
+
 Mat4 CreateModelMatrix(float positionX, float positionY, float rotationRadians, float scaleX, float scaleY)
 { // 控制X平移  控制Y平移  控制旋转  控制X缩放  控制Y缩放
     float cosine = std::cos(rotationRadians); // 进一步控制旋转
@@ -67,13 +71,14 @@ layout(location = 1) in vec3 color;
 layout(location = 2) in vec2 textureCoordinate;
 
 uniform mat4 modelMatrix;
+uniform mat4 viewMatrix;
 
 out vec3 vertexColor;
 out vec2 textureUV;
 
 void main()
 {
-    gl_Position = modelMatrix * vec4(position, 1.0);    
+    gl_Position = viewMatrix * modelMatrix * vec4(position, 1.0);
 
     vertexColor = color;
     textureUV = textureCoordinate;
@@ -237,6 +242,13 @@ void main()
         std::cout << "Failed to find modelMatrix uniform!" << std::endl;
     }
 
+    GLint viewMatrixLocation = glGetUniformLocation(shaderProgram, "viewMatrix"); // 查找viewMatrix的位置
+    if (viewMatrixLocation == -1) {
+        std::cout
+            << "Failed to find viewMatrix uniform!"
+            << std::endl;
+    }
+
     // ----------删除单独的着色器对象----------
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
@@ -387,6 +399,13 @@ void main()
     // constexpr float moveStep = 0.1f; //定义一个编译时常量 moveStep，值为 0.1f，用于表示每次执行移动更新时增加或减少多少
     constexpr float moveSpeed = 0.8f;
     constexpr float rotationSpeed = 1.0f;
+
+    // 创建Camera
+    Camera2D camera{
+        Vec2{0.0f, 0.0f}
+    };
+
+    constexpr float cameraSpeed = 0.6f;
 
     // 索引数组 索引中的数字表示 使用的是第几个顶点
     constexpr GLuint rectangleIndices[] = {
@@ -564,6 +583,25 @@ void main()
         
         Mat4 modelMatrix = CreateModelMatrix(playerSprite.position.x, playerSprite.position.y, playerSprite.rotationRadians, playerSprite.scale.x, playerSprite.scale.y);
 
+        Mat4 viewMatrix = CreateModelMatrix(-camera.position.x, -camera.position.y, 0.0f, 1.0f, 1.0f);
+
+        // 移动摄像头视角
+        if (keyboardState[SDL_SCANCODE_UP]) {
+            camera.position.y += cameraSpeed * deltaTime;
+        }
+
+        if (keyboardState[SDL_SCANCODE_DOWN]) {
+            camera.position.y -= cameraSpeed * deltaTime;
+        }
+
+        if (keyboardState[SDL_SCANCODE_LEFT]) {
+            camera.position.x -= cameraSpeed * deltaTime;
+        }
+
+        if (keyboardState[SDL_SCANCODE_RIGHT]) {
+            camera.position.x += cameraSpeed * deltaTime;
+        }
+
         // 指定OpenGL清屏颜色 OpenGL颜色范围是：0.0 ～ 1.0  红、绿、蓝、透明度
         glClearColor(
             0.12f,
@@ -583,6 +621,8 @@ void main()
 
         // glUniform2f(objectOffsetLocation, objectOffsetX, objectOffsetY); // 修改uniform变量 传入两个数 两个数都是float
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, modelMatrix.values); // Shader中modelMatrix的位置  发送一个矩阵  不转置矩阵  CPU端保存矩阵数据的数组
+
+        glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, viewMatrix.values); // viewMatrixLocation 需要修改的矩阵
 
         glBindVertexArray(vertexArrayObject); // 选择VAO 恢复VAO中保存的顶点读取规则 VAO会告诉OpenGL：位置数据来自哪个VBO、每个顶点包含3个float、属性位置为0
 
