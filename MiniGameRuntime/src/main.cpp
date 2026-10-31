@@ -8,14 +8,20 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "ThirdParty/stb_image.h"
 
+#include "Math/Vec2.h"
+
 constexpr int WINDOW_WIDTH = 800;
 constexpr int WINDOW_HEIGHT = 600;
 
-constexpr float objectScaleX = 0.8f;
-constexpr float objectScaleY = 0.5f;
-
 struct Mat4 {
     float values[16];
+};
+
+struct Sprite {
+    Vec2 position;
+    Vec2 scale;
+    float rotationRadians;
+    GLuint textureId;
 };
 
 Mat4 CreateModelMatrix(float positionX, float positionY, float rotationRadians, float scaleX, float scaleY)
@@ -308,20 +314,24 @@ void main()
     }
 
     GLuint texture = 0; // 准备一个无符号整数变量texture，用于保存纹理编号
+
     glGenTextures(1, &texture); // 申请一个纹理编号，并写入texture
+
+    glActiveTexture(GL_TEXTURE0); // 选择第0号纹理单元。片段着色器中的 objectTexture之后也会使用0号纹理单元
+
     glBindTexture(GL_TEXTURE_2D, texture); // 把这个编号对应的纹理绑定为当前操作的二维纹理。之后针对 GL_TEXTURE_2D 的参数设置和图片上传，就作用于它
 
     // 设置纹理的取样规则  设置纹理的边界处理方式：当 UV 超出图片范围时，使用最近的边缘颜色
     glTexParameteri(
         GL_TEXTURE_2D,
         GL_TEXTURE_WRAP_S,
-        GL_REPEAT
+        GL_CLAMP_TO_EDGE
     );
 
     glTexParameteri(
         GL_TEXTURE_2D,
         GL_TEXTURE_WRAP_T,
-        GL_REPEAT
+        GL_CLAMP_TO_EDGE
     );
 
     glTexParameteri(
@@ -366,13 +376,25 @@ void main()
 
     stbi_image_free(texturePixels); // 释放 stbi_load() 为图片分配的 CPU 内存
 
+    // 这两个变量位于CPU中，用来记录矩形当前移动了多少
+    Sprite playerSprite{
+        Vec2{0.0f, 0.0f}, //保存水平方向的偏移量，初始为 0   保存垂直方向的偏移量，初始为 0
+        Vec2{0.8f, 0.5f},
+        0.0f,
+        texture
+    };
+
+    // constexpr float moveStep = 0.1f; //定义一个编译时常量 moveStep，值为 0.1f，用于表示每次执行移动更新时增加或减少多少
+    constexpr float moveSpeed = 0.8f;
+    constexpr float rotationSpeed = 1.0f;
+
     // 索引数组 索引中的数字表示 使用的是第几个顶点
     constexpr GLuint rectangleIndices[] = {
         0, 1, 2, // 第一个三角形
         0, 2, 3  // 第二个三角形
     };
 
-    // 计算索引数量 6
+    // 计算索引数量 8
     constexpr GLsizei indexCount = static_cast<GLsizei>(sizeof(rectangleIndices) / sizeof(rectangleIndices[0]));
 
     constexpr int valuesPerVertex = 8;
@@ -481,15 +503,6 @@ void main()
 
     bool running = true;
 
-    // 这两个变量位于CPU中，用来记录矩形当前移动了多少
-    float objectOffsetX = 0.0f; //保存水平方向的偏移量，初始为 0
-    float objectOffsetY = 0.0f; //保存垂直方向的偏移量，初始为 0
-    float objectRotation = 0.0f;
-
-    // constexpr float moveStep = 0.1f; //定义一个编译时常量 moveStep，值为 0.1f，用于表示每次执行移动更新时增加或减少多少
-    constexpr float moveSpeed = 0.8f;
-    constexpr float rotationSpeed = 1.0f;
-
     // 添加计时器
     const Uint64 performanceFrequency = SDL_GetPerformanceFrequency(); // 计时器每秒计数多少次
     Uint64 previousCounter = SDL_GetPerformanceCounter(); // 取计数器当前的读数，保存到previousCounter，作为之后计算时间差的起点
@@ -544,12 +557,12 @@ void main()
             directionY /= directionLength;
         }
 
-        objectOffsetX += directionX * moveSpeed * deltaTime;
-        objectOffsetY += directionY * moveSpeed * deltaTime;
+        playerSprite.position.x += directionX * moveSpeed * deltaTime;
+        playerSprite.position.y += directionY * moveSpeed * deltaTime;
 
-        objectRotation += rotationSpeed * deltaTime; // 物体持续旋转
-
-        Mat4 modelMatrix = CreateModelMatrix(objectOffsetX, objectOffsetY, objectRotation, objectScaleX, objectScaleY);
+        playerSprite.rotationRadians += rotationSpeed * deltaTime; // 物体持续旋转
+        
+        Mat4 modelMatrix = CreateModelMatrix(playerSprite.position.x, playerSprite.position.y, playerSprite.rotationRadians, playerSprite.scale.x, playerSprite.scale.y);
 
         // 指定OpenGL清屏颜色 OpenGL颜色范围是：0.0 ～ 1.0  红、绿、蓝、透明度
         glClearColor(
@@ -563,7 +576,8 @@ void main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
+
+        glBindTexture(GL_TEXTURE_2D, playerSprite.textureId);
 
         glUseProgram(shaderProgram); // 选择着色器程序  告诉OpenGL接下来的绘制使用这个着色器程序
 
