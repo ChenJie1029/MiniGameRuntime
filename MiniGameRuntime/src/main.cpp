@@ -1,6 +1,8 @@
 #include <iostream>
 #include <cmath>
 #include <string>
+#include <vector>
+#include <cstddef>
 
 #include <glad/gl.h>
 #include <SDL.h>
@@ -389,12 +391,36 @@ void main()
     stbi_image_free(texturePixels); // 释放 stbi_load() 为图片分配的 CPU 内存
 
     // 这两个变量位于CPU中，用来记录矩形当前移动了多少
-    Sprite playerSprite{
-        Vec2{0.0f, 0.0f}, //保存水平方向的偏移量，初始为 0   保存垂直方向的偏移量，初始为 0
-        Vec2{0.8f, 0.5f},
-        0.0f,
-        texture
+    //Sprite playerSprite{
+    //    Vec2{0.0f, 0.0f}, //保存水平方向的偏移量，初始为 0   保存垂直方向的偏移量，初始为 0
+    //    Vec2{0.8f, 0.5f},
+    //    0.0f,
+    //    texture
+    //};
+
+    // 用vector容器保存Sprite
+    std::vector<Sprite> sprites{
+        {
+            Vec2{0.0f, 0.0f},
+            Vec2{0.5f, 0.5f},
+            0.0f,
+            texture
+        },
+        {
+            Vec2{0.7f, 0.0f},
+            Vec2{0.2f, 0.8f},
+            0.0f,
+            texture
+        },
+        {
+            Vec2{-0.6f, -0.55f},
+            Vec2{0.6f, 0.2f},
+            0.0f,
+            texture
+        }
     };
+
+    constexpr std::size_t PLAYER_INDEX = 0; // 玩家索引 sprites[0]是玩家
 
     // constexpr float moveStep = 0.1f; //定义一个编译时常量 moveStep，值为 0.1f，用于表示每次执行移动更新时增加或减少多少
     constexpr float moveSpeed = 0.8f;
@@ -576,12 +602,15 @@ void main()
             directionY /= directionLength;
         }
 
-        playerSprite.position.x += directionX * moveSpeed * deltaTime;
-        playerSprite.position.y += directionY * moveSpeed * deltaTime;
+        //playerSprite.position.x += directionX * moveSpeed * deltaTime;
+        //playerSprite.position.y += directionY * moveSpeed * deltaTime;
+        //playerSprite.rotationRadians += rotationSpeed * deltaTime; 
 
-        playerSprite.rotationRadians += rotationSpeed * deltaTime; // 物体持续旋转
+        sprites[PLAYER_INDEX].position.x += directionX * moveSpeed * deltaTime;
+        sprites[PLAYER_INDEX].position.y += directionY * moveSpeed * deltaTime;
+        sprites[PLAYER_INDEX].rotationRadians += rotationSpeed * deltaTime; // 物体持续旋转
         
-        Mat4 modelMatrix = CreateModelMatrix(playerSprite.position.x, playerSprite.position.y, playerSprite.rotationRadians, playerSprite.scale.x, playerSprite.scale.y);
+        //Mat4 modelMatrix = CreateModelMatrix(playerSprite.position.x, playerSprite.position.y, playerSprite.rotationRadians, playerSprite.scale.x, playerSprite.scale.y);
 
         Mat4 viewMatrix = CreateModelMatrix(-camera.position.x, -camera.position.y, 0.0f, 1.0f, 1.0f);
 
@@ -613,20 +642,44 @@ void main()
         // 清除颜色缓冲区
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glActiveTexture(GL_TEXTURE0);
+        //glActiveTexture(GL_TEXTURE0);
 
-        glBindTexture(GL_TEXTURE_2D, playerSprite.textureId);
+        //glBindTexture(GL_TEXTURE_2D, playerSprite.textureId);
 
         glUseProgram(shaderProgram); // 选择着色器程序  告诉OpenGL接下来的绘制使用这个着色器程序
 
         // glUniform2f(objectOffsetLocation, objectOffsetX, objectOffsetY); // 修改uniform变量 传入两个数 两个数都是float
-        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, modelMatrix.values); // Shader中modelMatrix的位置  发送一个矩阵  不转置矩阵  CPU端保存矩阵数据的数组
+        //glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, modelMatrix.values); // Shader中modelMatrix的位置  发送一个矩阵  不转置矩阵  CPU端保存矩阵数据的数组
 
         glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, viewMatrix.values); // viewMatrixLocation 需要修改的矩阵
 
+        glActiveTexture(GL_TEXTURE0); // 选择0号纹理单元。Shader中的 objectTexture也已经设置为读取0号纹理单元
+
         glBindVertexArray(vertexArrayObject); // 选择VAO 恢复VAO中保存的顶点读取规则 VAO会告诉OpenGL：位置数据来自哪个VBO、每个顶点包含3个float、属性位置为0
 
-        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr); //每三个索引组成一个三角形, 读取6个索引, 索引类型对应GLuint, 从EBO开头读取
+        for (const Sprite& sprite : sprites) {
+            Mat4 modelMatrix = CreateModelMatrix(
+                sprite.position.x,
+                sprite.position.y,
+                sprite.rotationRadians,
+                sprite.scale.x,
+                sprite.scale.y
+            );
+
+            glUniformMatrix4fv(
+                modelMatrixLocation,
+                1,
+                GL_FALSE,
+                modelMatrix.values
+            );
+
+            glBindTexture(
+                GL_TEXTURE_2D,
+                sprite.textureId
+            );
+
+            glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr); // 每三个索引组成一个三角形, 读取6个索引, 索引类型对应GLuint, 从EBO开头读取
+        }
 
         // glDrawArrays(GL_TRIANGLES, 0, vertexCount); // 发出绘制命令：按三角形方式绘制、从第0个顶点开始、一共读取3个顶点
 
