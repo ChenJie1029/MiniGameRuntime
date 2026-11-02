@@ -30,6 +30,14 @@ struct Camera2D {
     Vec2 position;
 };
 
+struct Renderer { // 定义一个Renderer数据类型
+    GLuint shaderProgram; // 保存当前使用的Shader Program编号
+    GLuint modelMatrixLocation; // 保存Shader中 modelMatrix的Uniform位置
+    GLuint viewMatrixLocation; // 保存Shader中 viewMatrix的Uniform位置
+    GLuint vertexArrayObject; // 保存矩形VAO的编号 Renderer通过它知道如何读取顶点数据
+    GLsizei indexCount; // 保存EBO中需要读取的索引数量 当前矩形有6个索引
+};
+
 Mat4 CreateModelMatrix(float positionX, float positionY, float rotationRadians, float scaleX, float scaleY)
 { // 控制X平移  控制Y平移  控制旋转  控制X缩放  控制Y缩放
     float cosine = std::cos(rotationRadians); // 进一步控制旋转
@@ -60,6 +68,58 @@ Mat4 CreateModelMatrix(float positionX, float positionY, float rotationRadians, 
     };
 
     return matrix;
+}
+
+void BeginScene(const Renderer& renderer, const Mat4& viewMatrix) {
+    glUseProgram(renderer.shaderProgram);
+
+    glUniformMatrix4fv(
+        renderer.viewMatrixLocation,
+        1,
+        GL_FALSE,
+        viewMatrix.values
+    );
+
+    glActiveTexture(GL_TEXTURE0);
+
+    glBindVertexArray(renderer.vertexArrayObject);
+}
+
+void DrawSprite(
+    const Renderer& renderer,
+    const Sprite& sprite
+) {
+    Mat4 modelMatrix = CreateModelMatrix( // 创建模型矩阵
+        sprite.position.x,
+        sprite.position.y,
+        sprite.rotationRadians,
+        sprite.scale.x,
+        sprite.scale.y
+    );
+
+    glUniformMatrix4fv( // 发送模型矩阵
+        renderer.modelMatrixLocation,
+        1,
+        GL_FALSE,
+        modelMatrix.values
+    );
+
+    glBindTexture( // 绑定纹理
+        GL_TEXTURE_2D,
+        sprite.textureId
+    );
+
+    glDrawElements( // 绘制
+        GL_TRIANGLES,
+        renderer.indexCount,
+        GL_UNSIGNED_INT,
+        nullptr
+    );
+}
+
+void EndScene() {
+    glBindVertexArray(0); // 解除当前VAO绑定
+    glUseProgram(0);
 }
 
 int main(int argc, char* argv[])
@@ -546,6 +606,14 @@ void main()
         << vertexCount
         << std::endl;
 
+    Renderer renderer{
+        shaderProgram,
+        modelMatrixLocation,
+        viewMatrixLocation,
+        vertexArrayObject,
+        indexCount
+    };
+
     bool running = true;
 
     // 添加计时器
@@ -646,44 +714,52 @@ void main()
 
         //glBindTexture(GL_TEXTURE_2D, playerSprite.textureId);
 
-        glUseProgram(shaderProgram); // 选择着色器程序  告诉OpenGL接下来的绘制使用这个着色器程序
+        //glUseProgram(shaderProgram); // 选择着色器程序  告诉OpenGL接下来的绘制使用这个着色器程序
 
         // glUniform2f(objectOffsetLocation, objectOffsetX, objectOffsetY); // 修改uniform变量 传入两个数 两个数都是float
         //glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, modelMatrix.values); // Shader中modelMatrix的位置  发送一个矩阵  不转置矩阵  CPU端保存矩阵数据的数组
 
-        glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, viewMatrix.values); // viewMatrixLocation 需要修改的矩阵
+        //glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, viewMatrix.values); // viewMatrixLocation 需要修改的矩阵
 
-        glActiveTexture(GL_TEXTURE0); // 选择0号纹理单元。Shader中的 objectTexture也已经设置为读取0号纹理单元
+        //glActiveTexture(GL_TEXTURE0); // 选择0号纹理单元。Shader中的 objectTexture也已经设置为读取0号纹理单元
 
-        glBindVertexArray(vertexArrayObject); // 选择VAO 恢复VAO中保存的顶点读取规则 VAO会告诉OpenGL：位置数据来自哪个VBO、每个顶点包含3个float、属性位置为0
+        //glBindVertexArray(vertexArrayObject); // 选择VAO 恢复VAO中保存的顶点读取规则 VAO会告诉OpenGL：位置数据来自哪个VBO、每个顶点包含3个float、属性位置为0
 
-        for (const Sprite& sprite : sprites) {
-            Mat4 modelMatrix = CreateModelMatrix(
-                sprite.position.x,
-                sprite.position.y,
-                sprite.rotationRadians,
-                sprite.scale.x,
-                sprite.scale.y
-            );
+        //for (const Sprite& sprite : sprites) {
+        //    Mat4 modelMatrix = CreateModelMatrix(
+        //        sprite.position.x,
+        //        sprite.position.y,
+        //        sprite.rotationRadians,
+        //        sprite.scale.x,
+        //        sprite.scale.y
+        //    );
 
-            glUniformMatrix4fv(
-                modelMatrixLocation,
-                1,
-                GL_FALSE,
-                modelMatrix.values
-            );
+        //    glUniformMatrix4fv(
+        //        modelMatrixLocation,
+        //        1,
+        //        GL_FALSE,
+        //        modelMatrix.values
+        //    );
 
-            glBindTexture(
-                GL_TEXTURE_2D,
-                sprite.textureId
-            );
+        //    glBindTexture(
+        //        GL_TEXTURE_2D,
+        //        sprite.textureId
+        //    );
 
-            glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr); // 每三个索引组成一个三角形, 读取6个索引, 索引类型对应GLuint, 从EBO开头读取
-        }
+        //    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr); // 每三个索引组成一个三角形, 读取6个索引, 索引类型对应GLuint, 从EBO开头读取
+        //}
 
         // glDrawArrays(GL_TRIANGLES, 0, vertexCount); // 发出绘制命令：按三角形方式绘制、从第0个顶点开始、一共读取3个顶点
 
-        glBindVertexArray(0); // 解除VAO绑定
+        //glBindVertexArray(0); // 解除VAO绑定
+
+        BeginScene(renderer, viewMatrix); // 选择Shader、发送Camera矩阵、选择纹理单元并绑定VAO
+
+        for (const Sprite& sprite : sprites) {
+            DrawSprite(renderer, sprite);
+        }
+
+        EndScene();
 
         // 将OpenGL绘制结果显示到窗口
         SDL_GL_SwapWindow(window);
