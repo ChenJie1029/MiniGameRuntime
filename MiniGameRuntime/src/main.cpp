@@ -12,6 +12,11 @@
 
 #include "Math/Vec2.h"
 
+#include "Core/World.h"
+#include "Common/Entity.h"
+#include "Components/TransformComponent.h"
+#include "Components/AABBComponent.h"
+
 constexpr int WINDOW_WIDTH = 800;
 constexpr int WINDOW_HEIGHT = 600;
 
@@ -115,6 +120,28 @@ void DrawSprite(
         GL_UNSIGNED_INT,
         nullptr
     );
+}
+
+void DrawEntity(const Renderer& renderer, World& world, Entity entity, GLuint textureId) { // World到Sprite的转换函数   
+    // 提供绘制需要的Shader、Uniform、VAO和索引数量   提供实体的组件数据   指定要绘制哪个Entity ID   指定该实体使用哪张OpenGL纹理
+    if (!world.HasTransform(entity) || !world.HasAABB(entity)) { // 位置和边界信息
+        return;
+    }
+
+    const TransformComponent& transform = world.GetTransform(entity); // 根据Entity ID从World中取得位置组件
+
+    const AABBComponent& aabb = world.GetAABB(entity);// 根据Entity ID取得AABB组件
+
+    Sprite sprite{ // 创建临时Sprite
+        transform.position, // Sprite位置直接来自Transform
+        Vec2{aabb.halfExtents.x * 2.0f, // AABB保存的是半宽和半高，而Sprite的缩放需要完整宽度和高度，因此乘2
+             aabb.halfExtents.y * 2.0f
+        },
+        0.0f, // 没有旋转
+        textureId // 让这个临时Sprite使用传进来的纹理
+    };
+
+    DrawSprite(renderer, sprite); // 绘制函数
 }
 
 void EndScene() {
@@ -459,28 +486,28 @@ void main()
     //};
 
     // 用vector容器保存Sprite
-    std::vector<Sprite> sprites{
-        {
-            Vec2{0.0f, 0.0f},
-            Vec2{0.5f, 0.5f},
-            0.0f,
-            texture
-        },
-        {
-            Vec2{0.7f, 0.0f},
-            Vec2{0.2f, 0.8f},
-            0.0f,
-            texture
-        },
-        {
-            Vec2{-0.6f, -0.55f},
-            Vec2{0.6f, 0.2f},
-            0.0f,
-            texture
-        }
-    };
+    //std::vector<Sprite> sprites{
+    //    {
+    //        Vec2{0.0f, 0.0f},
+    //        Vec2{0.5f, 0.5f},
+    //        0.0f,
+    //        texture
+    //    },
+    //    {
+    //        Vec2{0.7f, 0.0f},
+    //        Vec2{0.2f, 0.8f},
+    //        0.0f,
+    //        texture
+    //    },
+    //    {
+    //        Vec2{-0.6f, -0.55f},
+    //        Vec2{0.6f, 0.2f},
+    //        0.0f,
+    //        texture
+    //    }
+    //};
 
-    constexpr std::size_t PLAYER_INDEX = 0; // 玩家索引 sprites[0]是玩家
+    //constexpr std::size_t PLAYER_INDEX = 0; // 玩家索引 sprites[0]是玩家
 
     // constexpr float moveStep = 0.1f; //定义一个编译时常量 moveStep，值为 0.1f，用于表示每次执行移动更新时增加或减少多少
     constexpr float moveSpeed = 0.8f;
