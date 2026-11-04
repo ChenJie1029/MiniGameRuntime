@@ -152,6 +152,71 @@ void EndScene() {
     glUseProgram(0);
 }
 
+// 添加Shader编译检查函数
+bool CheckShaderCompilation(GLuint shader, const char* shaderName) { // 接收需要检查的Shader编号   接收用于输出的名称，例如 "Vertex"或 "Fragment"
+    GLint compilationSucceeded = GL_FALSE; // 先准备一个变量，初始表示编译失败
+
+    glGetShaderiv( // 查询shader  查询内容是编译状态  把结果写进compilationSucceeded
+        shader,
+        GL_COMPILE_STATUS,
+        &compilationSucceeded
+    );
+
+    if (compilationSucceeded == GL_TRUE) {
+        return true;
+    }
+
+    char errorMessage[1024]{}; // 准备一个能保存1024个字符的C风格字符数组，并初始化为空
+
+    glGetShaderInfoLog( // 从Shader中取得编译器错误日志，写入 errorMessage
+        shader,
+        static_cast<GLsizei>(sizeof(errorMessage)),
+        nullptr,
+        errorMessage
+    );
+
+    std::cout
+        << shaderName
+        << " shader compilation failed:"
+        << std::endl
+        << errorMessage
+        << std::endl;
+
+    return false;
+}
+
+// 添加Shader Program链接检查
+bool CheckProgramLinking(GLuint shaderProgram) {
+    GLint linkingSucceeded = GL_FALSE;
+
+    glGetProgramiv(
+        shaderProgram,
+        GL_LINK_STATUS,
+        &linkingSucceeded
+    );
+
+    if (linkingSucceeded == GL_TRUE) {
+        return true;
+    }
+
+    char errorMessage[1024]{};
+
+    glGetProgramInfoLog(
+        shaderProgram,
+        static_cast<GLsizei>(sizeof(errorMessage)),
+        nullptr,
+        errorMessage
+    );
+
+    std::cout
+        << "Shader program linking failed:"
+        << std::endl
+        << errorMessage
+        << std::endl;
+
+    return false;
+}
+
 int main(int argc, char* argv[])
 {
     // ----------添加顶点着色器----------
@@ -309,6 +374,9 @@ void main()
 
     glCompileShader(vertexShader); //编译GPU程序 这是编译GLSL着色器，不是编译C++
 
+    // 检查Shader编译  调用
+    bool vertexShaderCompiled = CheckShaderCompilation(vertexShader, "Vertex");
+
     // ----------编译片段着色器----------
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -321,11 +389,37 @@ void main()
 
     glCompileShader(fragmentShader);
 
+    // 检查Shader编译  调用
+    bool fragmentShaderCompiled = CheckShaderCompilation(fragmentShader, "Fragment");
+
+    if (!vertexShaderCompiled || !fragmentShaderCompiled) {
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+
+        SDL_GL_DeleteContext(openGLContext);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+
+        return 1;
+    }
+
     // ----------链接Shader Program----------
     GLuint shaderProgram = glCreateProgram(); // 创建着色器程序
     glAttachShader(shaderProgram, vertexShader); // 把顶点着色器安装到程序上
     glAttachShader(shaderProgram, fragmentShader); // 把片段着色器安装到程序上
     glLinkProgram(shaderProgram); // 将它们连接成完整的GPU绘制程序
+
+    if (!CheckProgramLinking(shaderProgram)) { // 链接失败
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        glDeleteProgram(shaderProgram);
+
+        SDL_GL_DeleteContext(openGLContext);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+
+        return 1;
+    }
 
     // glGetUniformLocation在指定ShaderProgram中查找名为modelMatrix的变量，并返回它的位置编号是modelMatrixLocation类型
     GLint modelMatrixLocation = glGetUniformLocation(shaderProgram, "modelMatrix");  // 存在于顶点着色器中 uniform mat4 modelMatrix;
@@ -834,15 +928,15 @@ void main()
         SDL_GL_SwapWindow(window);
     }
 
-    // 释放Shader Program
+    glBindVertexArray(0);
     glUseProgram(0);
-    glDeleteProgram(shaderProgram);
 
-    // 释放OpenGL对象
+    // OpenGL资源删除
+    glDeleteTextures(1, &texture);
     glDeleteBuffers(1, &elementBufferObject);
     glDeleteBuffers(1, &vertexBufferObject);
     glDeleteVertexArrays(1, &vertexArrayObject);
-    glDeleteTextures(1, &texture);
+    glDeleteProgram(shaderProgram);
 
     SDL_GL_DeleteContext(openGLContext);
     SDL_DestroyWindow(window);
