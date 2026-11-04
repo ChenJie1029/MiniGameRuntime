@@ -450,22 +450,6 @@ void main()
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // 这句规定混合比例(当前片元颜色乘以自己的Alpha, 背景颜色乘以 1−当前片元的Alpha)    最终颜色 = 当前颜色×Alpha + 背景颜色×(1 − Alpha)
 
-    //constexpr float triangleVertices[] = {
-    //    // X      Y      Z
-    //    -0.5f, -0.5f,  0.0f,  // 左下
-    //     0.5f, -0.5f,  0.0f,  // 右下
-    //     0.0f,  0.5f,  0.0f   // 上方
-    //};
-
-    //constexpr int valuesPerVertex = 3;
-
-    //constexpr GLsizei vertexCount =
-    //    static_cast<GLsizei>(
-    //        sizeof(triangleVertices) /
-    //        sizeof(triangleVertices[0]) /
-    //        valuesPerVertex
-    //        );
-
     constexpr float rectangleVertices[] = {
         // 位置：X      Y      Z    颜色：R   G   B   // UV
         -0.5f, -0.35f, 0.0f, 1.0, 0.0f, 0.0f, 0.0f, 0.0f,  // 0: 左下  红
@@ -544,19 +528,6 @@ void main()
         GL_LINEAR
     );
 
-    // 创建一张宽2、高2、每个像素使用RGBA格式的二维纹理，并上传texturePixels 定义纹理图片的尺寸、存储格式，并上传像素数据
-    //glTexImage2D(
-    //    GL_TEXTURE_2D, // 操作当前绑定的二维纹理
-    //    0, // 设置第 0 层，也就是基础图像层
-    //    GL_RGBA, // 指定纹理内部保存红、绿、蓝、Alpha 分量
-    //    2, // 图片宽度为 2 个像素
-    //    2, // 图片高度为 2 个像素
-    //    0, // 保留的边框参数，必须为 0
-    //    GL_RGBA, // 原始数据按 R、G、B、A 的顺序排列
-    //    GL_UNSIGNED_BYTE, // 原始数据的每个分量是一个无符号字节
-    //    texturePixels // 从这个数组中读取像素数据
-    //);
-
     // 上传图片
     glTexImage2D(
         GL_TEXTURE_2D, // 操作当前绑定的二维纹理
@@ -573,38 +544,6 @@ void main()
     glGenerateMipmap(GL_TEXTURE_2D); // 为当前二维纹理生成 mipmap，也就是同一张图片的一组逐级缩小版本
 
     stbi_image_free(texturePixels); // 释放 stbi_load() 为图片分配的 CPU 内存
-
-    // 这两个变量位于CPU中，用来记录矩形当前移动了多少
-    //Sprite playerSprite{
-    //    Vec2{0.0f, 0.0f}, //保存水平方向的偏移量，初始为 0   保存垂直方向的偏移量，初始为 0
-    //    Vec2{0.8f, 0.5f},
-    //    0.0f,
-    //    texture
-    //};
-
-    // 用vector容器保存Sprite
-    //std::vector<Sprite> sprites{
-    //    {
-    //        Vec2{0.0f, 0.0f},
-    //        Vec2{0.5f, 0.5f},
-    //        0.0f,
-    //        texture
-    //    },
-    //    {
-    //        Vec2{0.7f, 0.0f},
-    //        Vec2{0.2f, 0.8f},
-    //        0.0f,
-    //        texture
-    //    },
-    //    {
-    //        Vec2{-0.6f, -0.55f},
-    //        Vec2{0.6f, 0.2f},
-    //        0.0f,
-    //        texture
-    //    }
-    //};
-
-    //constexpr std::size_t PLAYER_INDEX = 0; // 玩家索引 sprites[0]是玩家
 
     // constexpr float moveStep = 0.1f; //定义一个编译时常量 moveStep，值为 0.1f，用于表示每次执行移动更新时增加或减少多少
     constexpr float moveSpeed = 0.8f;
@@ -657,13 +596,6 @@ void main()
     glBindVertexArray(vertexArrayObject);
     // 把顶点坐标上传到VBO
     glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
-
-    //glBufferData(
-    //    GL_ARRAY_BUFFER, // 上传的是顶点数据
-    //    sizeof(triangleVertices), // 数据总字节数
-    //    triangleVertices, // CPU中的原始数据
-    //    GL_STATIC_DRAW // 上传后通常不会频繁修改
-    //);
 
     glBufferData(
         GL_ARRAY_BUFFER, // 操作哪个绑定目标上的缓冲区
@@ -817,18 +749,6 @@ void main()
             directionY /= directionLength;
         }
 
-        //playerSprite.position.x += directionX * moveSpeed * deltaTime;
-        //playerSprite.position.y += directionY * moveSpeed * deltaTime;
-        //playerSprite.rotationRadians += rotationSpeed * deltaTime; 
-
-        //sprites[PLAYER_INDEX].position.x += directionX * moveSpeed * deltaTime;
-        //sprites[PLAYER_INDEX].position.y += directionY * moveSpeed * deltaTime;
-        //sprites[PLAYER_INDEX].rotationRadians += rotationSpeed * deltaTime; // 物体持续旋转
-
-        //TransformComponent& playerTransform = world.GetTransform(player); // 创建引用，直接指向World中玩家的Transform组件
-        //playerTransform.position.x += directionX * moveSpeed * deltaTime;
-        //playerTransform.position.y += directionY * moveSpeed * deltaTime;
-
         VelocityComponent& playerVelocity = world.GetVelocity(player); // 声明一个Velocity组件引用  用输入修改速度
         playerVelocity.velocity.x = directionX * moveSpeed; // 这里只计算速度不计算位移，所以不 *deltaTime
         playerVelocity.velocity.y = directionY * moveSpeed;
@@ -869,54 +789,7 @@ void main()
         // 清除颜色缓冲区
         glClear(GL_COLOR_BUFFER_BIT);
 
-        //glActiveTexture(GL_TEXTURE0);
-
-        //glBindTexture(GL_TEXTURE_2D, playerSprite.textureId);
-
-        //glUseProgram(shaderProgram); // 选择着色器程序  告诉OpenGL接下来的绘制使用这个着色器程序
-
-        // glUniform2f(objectOffsetLocation, objectOffsetX, objectOffsetY); // 修改uniform变量 传入两个数 两个数都是float
-        //glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, modelMatrix.values); // Shader中modelMatrix的位置  发送一个矩阵  不转置矩阵  CPU端保存矩阵数据的数组
-
-        //glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, viewMatrix.values); // viewMatrixLocation 需要修改的矩阵
-
-        //glActiveTexture(GL_TEXTURE0); // 选择0号纹理单元。Shader中的 objectTexture也已经设置为读取0号纹理单元
-
-        //glBindVertexArray(vertexArrayObject); // 选择VAO 恢复VAO中保存的顶点读取规则 VAO会告诉OpenGL：位置数据来自哪个VBO、每个顶点包含3个float、属性位置为0
-
-        //for (const Sprite& sprite : sprites) {
-        //    Mat4 modelMatrix = CreateModelMatrix(
-        //        sprite.position.x,
-        //        sprite.position.y,
-        //        sprite.rotationRadians,
-        //        sprite.scale.x,
-        //        sprite.scale.y
-        //    );
-
-        //    glUniformMatrix4fv(
-        //        modelMatrixLocation,
-        //        1,
-        //        GL_FALSE,
-        //        modelMatrix.values
-        //    );
-
-        //    glBindTexture(
-        //        GL_TEXTURE_2D,
-        //        sprite.textureId
-        //    );
-
-        //    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr); // 每三个索引组成一个三角形, 读取6个索引, 索引类型对应GLuint, 从EBO开头读取
-        //}
-
-        // glDrawArrays(GL_TRIANGLES, 0, vertexCount); // 发出绘制命令：按三角形方式绘制、从第0个顶点开始、一共读取3个顶点
-
-        //glBindVertexArray(0); // 解除VAO绑定
-
         BeginScene(renderer, viewMatrix); // 选择Shader、发送Camera矩阵、选择纹理单元并绑定VAO
-
-        //for (const Sprite& sprite : sprites) {
-        //    DrawSprite(renderer, sprite);
-        //}
 
         for (Entity entity : renderEntities) { // 依次取出需要绘制的Entity ID
             DrawEntity(renderer, world, entity, texture);
