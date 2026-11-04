@@ -17,6 +17,9 @@
 #include "Components/TransformComponent.h"
 #include "Components/AABBComponent.h"
 
+#include "Components/VelocityComponent.h"
+#include "Systems/CollisionSystem.h"
+
 constexpr int WINDOW_WIDTH = 800;
 constexpr int WINDOW_HEIGHT = 600;
 
@@ -649,6 +652,8 @@ void main()
 
     world.AddAABB(player, AABBComponent{ 0.2f, 0.2f }); // 添加碰撞体积，半宽高
 
+    world.AddVelocity(player, VelocityComponent{Vec2{0.0f, 0.0f}}); // 添加速度组件
+
     Entity wall = world.CreateEntity();
 
     world.AddTransform(wall, TransformComponent{ Vec2{0.5f, 0.0f} });
@@ -659,6 +664,8 @@ void main()
         player,
         wall
     };
+
+    CollisionSystem collisionSystem; // 创建碰撞系统
 
     bool running = true;
 
@@ -724,9 +731,17 @@ void main()
         //sprites[PLAYER_INDEX].position.y += directionY * moveSpeed * deltaTime;
         //sprites[PLAYER_INDEX].rotationRadians += rotationSpeed * deltaTime; // 物体持续旋转
 
-        TransformComponent& playerTransform = world.GetTransform(player); // 创建引用，直接指向World中玩家的Transform组件
-        playerTransform.position.x += directionX * moveSpeed * deltaTime;
-        playerTransform.position.y += directionY * moveSpeed * deltaTime;
+        //TransformComponent& playerTransform = world.GetTransform(player); // 创建引用，直接指向World中玩家的Transform组件
+        //playerTransform.position.x += directionX * moveSpeed * deltaTime;
+        //playerTransform.position.y += directionY * moveSpeed * deltaTime;
+
+        VelocityComponent& playerVelocity = world.GetVelocity(player); // 声明一个Velocity组件引用  用输入修改速度
+        playerVelocity.velocity.x = directionX * moveSpeed; // 这里只计算速度不计算位移，所以不 *deltaTime
+        playerVelocity.velocity.y = directionY * moveSpeed;
+
+        world.Update(deltaTime); // *deltaTime用来更新位移
+
+        collisionSystem.Update(world); // 用来计算所有的物体碰撞
         
         //Mat4 modelMatrix = CreateModelMatrix(playerSprite.position.x, playerSprite.position.y, playerSprite.rotationRadians, playerSprite.scale.x, playerSprite.scale.y);
 
