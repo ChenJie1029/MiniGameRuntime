@@ -641,6 +641,25 @@ void main()
         indexCount
     };
 
+    World world; // 创建保存实体和组件的World对象world
+
+    Entity player = world.CreateEntity(); // 创建玩家ID 类型是Entity
+
+    world.AddTransform(player, TransformComponent{Vec2{-0.4f, 0.0f}}); // 添加玩家位置
+
+    world.AddAABB(player, AABBComponent{ 0.2f, 0.2f }); // 添加碰撞体积，半宽高
+
+    Entity wall = world.CreateEntity();
+
+    world.AddTransform(wall, TransformComponent{ Vec2{0.5f, 0.0f} });
+
+    world.AddAABB(wall, AABBComponent{ 0.2f, 0.6f });
+
+    std::vector<Entity> renderEntities{ // 渲染名单  这个容器只保存需要绘制的Entity ID
+        player,
+        wall
+    };
+
     bool running = true;
 
     // 添加计时器
@@ -701,9 +720,13 @@ void main()
         //playerSprite.position.y += directionY * moveSpeed * deltaTime;
         //playerSprite.rotationRadians += rotationSpeed * deltaTime; 
 
-        sprites[PLAYER_INDEX].position.x += directionX * moveSpeed * deltaTime;
-        sprites[PLAYER_INDEX].position.y += directionY * moveSpeed * deltaTime;
-        sprites[PLAYER_INDEX].rotationRadians += rotationSpeed * deltaTime; // 物体持续旋转
+        //sprites[PLAYER_INDEX].position.x += directionX * moveSpeed * deltaTime;
+        //sprites[PLAYER_INDEX].position.y += directionY * moveSpeed * deltaTime;
+        //sprites[PLAYER_INDEX].rotationRadians += rotationSpeed * deltaTime; // 物体持续旋转
+
+        TransformComponent& playerTransform = world.GetTransform(player); // 创建引用，直接指向World中玩家的Transform组件
+        playerTransform.position.x += directionX * moveSpeed * deltaTime;
+        playerTransform.position.y += directionY * moveSpeed * deltaTime;
         
         //Mat4 modelMatrix = CreateModelMatrix(playerSprite.position.x, playerSprite.position.y, playerSprite.rotationRadians, playerSprite.scale.x, playerSprite.scale.y);
 
@@ -782,8 +805,12 @@ void main()
 
         BeginScene(renderer, viewMatrix); // 选择Shader、发送Camera矩阵、选择纹理单元并绑定VAO
 
-        for (const Sprite& sprite : sprites) {
-            DrawSprite(renderer, sprite);
+        //for (const Sprite& sprite : sprites) {
+        //    DrawSprite(renderer, sprite);
+        //}
+
+        for (Entity entity : renderEntities) { // 依次取出需要绘制的Entity ID
+            DrawEntity(renderer, world, entity, texture);
         }
 
         EndScene();
