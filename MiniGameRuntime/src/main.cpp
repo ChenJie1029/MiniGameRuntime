@@ -20,6 +20,8 @@
 #include "Components/VelocityComponent.h"
 #include "Systems/CollisionSystem.h"
 
+#include "Core/Scene.h"
+
 constexpr int WINDOW_WIDTH = 800;
 constexpr int WINDOW_HEIGHT = 600;
 
