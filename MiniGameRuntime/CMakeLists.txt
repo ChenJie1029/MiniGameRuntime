@@ -28,7 +28,14 @@ add_executable(MiniGameRuntime
     src/Core/World.cpp 
     src/Systems/CollisionSystem.cpp 
     src/Gameplay/CharacterStateMachine.cpp
-    src/Core/EventBus.cpp  "src/demos/LifetimeDemo.cpp" "include/Core/ObjectPool.h" "include/Core/Timer.h" "src/Core/Timer.cpp" "src/Benchmark/BenchmarkEntity.h" "src/Benchmark/MovementBenchmark.h" "src/Benchmark/CollisionBenchmark.h")
+    src/Core/EventBus.cpp  
+    src/Core/Scene.cpp
+    "src/demos/LifetimeDemo.cpp" 
+    "include/Core/ObjectPool.h" 
+    "include/Core/Timer.h" 
+    "src/Core/Timer.cpp" 
+    "src/Benchmark/BenchmarkEntity.h" 
+    "src/Benchmark/MovementBenchmark.h" "src/Benchmark/CollisionBenchmark.h")
 
     target_compile_definitions(
         MiniGameRuntime

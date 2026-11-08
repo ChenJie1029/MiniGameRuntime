@@ -672,26 +672,29 @@ void main()
         indexCount
     };
 
-    World world; // 创建保存实体和组件的World对象world
+    //World world; // 创建保存实体和组件的World对象world
 
-    Entity player = world.CreateEntity(); // 创建玩家ID 类型是Entity
+    //Entity player = world.CreateEntity(); // 创建玩家ID 类型是Entity
 
-    world.AddTransform(player, TransformComponent{Vec2{-0.4f, 0.0f}}); // 添加玩家位置
+    //world.AddTransform(player, TransformComponent{Vec2{-0.4f, 0.0f}}); // 添加玩家位置
 
-    world.AddAABB(player, AABBComponent{ 0.2f, 0.2f }); // 添加碰撞体积，半宽高
+    //world.AddAABB(player, AABBComponent{ 0.2f, 0.2f }); // 添加碰撞体积，半宽高
 
-    world.AddVelocity(player, VelocityComponent{Vec2{0.0f, 0.0f}}); // 添加速度组件
+    //world.AddVelocity(player, VelocityComponent{Vec2{0.0f, 0.0f}}); // 添加速度组件
 
-    Entity wall = world.CreateEntity();
+    //Entity wall = world.CreateEntity();
 
-    world.AddTransform(wall, TransformComponent{ Vec2{0.5f, 0.0f} });
+    //world.AddTransform(wall, TransformComponent{ Vec2{0.5f, 0.0f} });
 
-    world.AddAABB(wall, AABBComponent{ 0.2f, 0.6f });
+    //world.AddAABB(wall, AABBComponent{ 0.2f, 0.6f });
 
-    std::vector<Entity> renderEntities{ // 渲染名单  这个容器只保存需要绘制的Entity ID
-        player,
-        wall
-    };
+    //std::vector<Entity> renderEntities{ // 渲染名单  这个容器只保存需要绘制的Entity ID
+    //    player,
+    //    wall
+    //};
+
+    Scene scene;
+    scene.Initialize();
 
     CollisionSystem collisionSystem; // 创建碰撞系统
 
@@ -751,13 +754,19 @@ void main()
             directionY /= directionLength;
         }
 
-        VelocityComponent& playerVelocity = world.GetVelocity(player); // 声明一个Velocity组件引用  用输入修改速度
-        playerVelocity.velocity.x = directionX * moveSpeed; // 这里只计算速度不计算位移，所以不 *deltaTime
+        //VelocityComponent& playerVelocity = world.GetVelocity(player); // 声明一个Velocity组件引用  用输入修改速度
+        //playerVelocity.velocity.x = directionX * moveSpeed; // 这里只计算速度不计算位移，所以不 *deltaTime
+        //playerVelocity.velocity.y = directionY * moveSpeed;
+
+        //world.Update(deltaTime); // *deltaTime用来更新位移
+        //collisionSystem.Update(world); // 用来计算所有的物体碰撞
+
+        VelocityComponent& playerVelocity = scene.world.GetVelocity(scene.player);
+        playerVelocity.velocity.x = directionX * moveSpeed;
         playerVelocity.velocity.y = directionY * moveSpeed;
 
-        world.Update(deltaTime); // *deltaTime用来更新位移
-
-        collisionSystem.Update(world); // 用来计算所有的物体碰撞
+        scene.world.Update(deltaTime);
+        collisionSystem.Update(scene.world);
         
         //Mat4 modelMatrix = CreateModelMatrix(playerSprite.position.x, playerSprite.position.y, playerSprite.rotationRadians, playerSprite.scale.x, playerSprite.scale.y);
 
@@ -793,8 +802,12 @@ void main()
 
         BeginScene(renderer, viewMatrix); // 选择Shader、发送Camera矩阵、选择纹理单元并绑定VAO
 
-        for (Entity entity : renderEntities) { // 依次取出需要绘制的Entity ID
-            DrawEntity(renderer, world, entity, texture);
+        //for (Entity entity : renderEntities) { // 依次取出需要绘制的Entity ID
+        //    DrawEntity(renderer, world, entity, texture);
+        //}
+
+        for (Entity entity : scene.renderEntities) { // 依次取出需要绘制的Entity ID
+            DrawEntity(renderer, scene.world, entity, texture);
         }
 
         EndScene();
