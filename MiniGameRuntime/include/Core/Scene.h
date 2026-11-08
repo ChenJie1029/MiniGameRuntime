@@ -11,4 +11,5 @@ struct Scene {
 	std::vector<Entity> renderEntities;
 
 	void Initialize(); // Scene提供一个名为Initialize的操作
+	void DestroyEntity(Entity entity);
 };

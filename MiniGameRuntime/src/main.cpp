@@ -712,12 +712,33 @@ void main()
 
         SDL_Event event;
 
+        //while (SDL_PollEvent(&event)) {
+        //    if (event.type == SDL_QUIT) {
+        //        running = false;
+        //    }
+        //    else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
+        //        running = false;
+        //    }
+        //}
+
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 running = false;
             }
             else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
                 running = false;
+            }
+            else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_DELETE) {
+                if (scene.player != INVALID_ENTITY) {
+                    Entity removedEntity = scene.player; // 保存原玩家ID
+                    scene.DestroyEntity(removedEntity); // 执行销毁
+
+                    std::cout << "Player ID: " << scene.player << '\n';
+                    std::cout << "Render count: " << scene.renderEntities.size() << '\n';
+                    std::cout << "Transform remains: " << scene.world.HasTransform(removedEntity) << '\n';
+                    std::cout << "Velocity remains: " << scene.world.HasVelocity(removedEntity) << '\n';
+                    std::cout << "AABB remains: " << scene.world.HasAABB(removedEntity) << '\n';
+                }
             }
         }
 
@@ -761,9 +782,11 @@ void main()
         //world.Update(deltaTime); // *deltaTime用来更新位移
         //collisionSystem.Update(world); // 用来计算所有的物体碰撞
 
-        VelocityComponent& playerVelocity = scene.world.GetVelocity(scene.player);
-        playerVelocity.velocity.x = directionX * moveSpeed;
-        playerVelocity.velocity.y = directionY * moveSpeed;
+        if (scene.world.HasVelocity(scene.player)) {
+            VelocityComponent& playerVelocity = scene.world.GetVelocity(scene.player);
+            playerVelocity.velocity.x = directionX * moveSpeed;
+            playerVelocity.velocity.y = directionY * moveSpeed;
+        }
 
         scene.world.Update(deltaTime);
         collisionSystem.Update(scene.world);
