@@ -22,6 +22,8 @@
 
 #include "Core/Scene.h"
 
+#include "Systems/MovementSystem.h"
+
 constexpr int WINDOW_WIDTH = 800;
 constexpr int WINDOW_HEIGHT = 600;
 
@@ -696,6 +698,7 @@ void main()
     Scene scene;
     scene.Initialize();
 
+    MovementSystem movementSystem; // 创建移动系统对象
     CollisionSystem collisionSystem; // 创建碰撞系统
 
     bool running = true;
@@ -797,7 +800,7 @@ void main()
             playerVelocity.velocity.y = directionY * moveSpeed;
         }
 
-        scene.world.Update(deltaTime);
+        movementSystem.Update(scene.world, deltaTime);
         collisionSystem.Update(scene.world);
         
         //Mat4 modelMatrix = CreateModelMatrix(playerSprite.position.x, playerSprite.position.y, playerSprite.rotationRadians, playerSprite.scale.x, playerSprite.scale.y);
