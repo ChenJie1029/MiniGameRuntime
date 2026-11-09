@@ -728,6 +728,15 @@ void main()
             else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
                 running = false;
             }
+            else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_r && event.key.repeat == 0) {
+                Entity oldPlayer = scene.player;
+                scene.Reset();
+                camera.position = Vec2{ 0.0f, 0.0f };
+
+                std::cout << "New player ID: " << scene.player << '\n';
+                std::cout << "Render count: " << scene.renderEntities.size() << '\n';
+                std::cout << "Old player Transform remains: " << scene.world.HasTransform(oldPlayer) << '\n';
+            }
             else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_DELETE) {
                 if (scene.player != INVALID_ENTITY) {
                     Entity removedEntity = scene.player; // 保存原玩家ID

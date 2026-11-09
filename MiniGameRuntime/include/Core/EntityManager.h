@@ -14,6 +14,8 @@ public:
 
 	bool DestroyEntity(Entity entity); //删除指定的实体
 
+	void Clear();
+
 	std::size_t GetEntityCount() const; //查询当前存活的实体数量
 
 private:

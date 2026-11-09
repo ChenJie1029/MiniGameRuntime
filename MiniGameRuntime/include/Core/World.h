@@ -11,6 +11,7 @@ class World {
 public:
 	Entity CreateEntity();
 	void DestroyEntity(Entity entity);
+	void Clear();
 
 	// 位置组件接口
 	void AddTransform(Entity entity, const TransformComponent& component); //创建实体并带有TransformComponent属性

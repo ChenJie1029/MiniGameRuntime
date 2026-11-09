@@ -47,6 +47,10 @@ bool EntityManager::DestroyEntity(Entity entity) {
 	return true;
 }
 
+void EntityManager::Clear() {
+	m_livingEntities.clear();
+}
+
 //查询当前存活的实体数量
 size_t EntityManager::GetEntityCount() const {
 	return m_livingEntities.size();

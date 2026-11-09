@@ -13,6 +13,13 @@ void World::DestroyEntity(Entity entity) {
 	m_aabbComponents.erase(entity);
 }
 
+void World::Clear() {
+	m_entityManager.Clear();
+	m_transformComponents.clear();
+	m_velocityComponents.clear();
+	m_aabbComponents.clear();
+}
+
 void World::AddTransform(Entity entity, const TransformComponent& component) {
 	if (entity == INVALID_ENTITY) return;
 

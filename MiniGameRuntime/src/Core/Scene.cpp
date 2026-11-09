@@ -31,3 +31,10 @@ void Scene::DestroyEntity(Entity entity) {
 		player = INVALID_ENTITY;
 	}
 }
+
+void Scene::Reset() {
+	world.Clear();
+	renderEntities.clear();
+	player = INVALID_ENTITY;
+	Initialize();
+}
