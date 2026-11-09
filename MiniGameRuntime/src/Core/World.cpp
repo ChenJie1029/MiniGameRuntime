@@ -11,6 +11,7 @@ void World::DestroyEntity(Entity entity) {
 	m_transformComponents.erase(entity); //如果这个实体被毁灭了，它在位置账本里的数据也必须一并注销
 	m_velocityComponents.erase(entity);
 	m_aabbComponents.erase(entity);
+	m_spriteComponents.erase(entity);
 }
 
 void World::Clear() {
@@ -18,6 +19,7 @@ void World::Clear() {
 	m_transformComponents.clear();
 	m_velocityComponents.clear();
 	m_aabbComponents.clear();
+	m_spriteComponents.clear();
 }
 
 void World::AddTransform(Entity entity, const TransformComponent& component) {
@@ -92,3 +94,23 @@ bool World::HasAABB(Entity entity) const {
 //		}
 //	}
 //}
+
+void World::AddSprite(Entity entity, const SpriteComponent& component) {
+	if (!m_entityManager.IsAlive(entity)) {
+		return;
+	}
+
+	m_spriteComponents[entity] = component;
+}
+
+const SpriteComponent& World::GetSprite(Entity entity) const {
+	auto it = m_spriteComponents.find(entity);
+	if (it == m_spriteComponents.end()) {
+		throw std::runtime_error("[ECS Error] Entity does not have a SpriteComponent!");
+	}
+	return it->second;
+}
+
+bool World::HasSprite(Entity entity) const {
+	return m_spriteComponents.find(entity) != m_spriteComponents.end();
+}

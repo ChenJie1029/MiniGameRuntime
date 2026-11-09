@@ -36,7 +36,7 @@ add_executable(MiniGameRuntime
     "include/Core/Timer.h" 
     "src/Core/Timer.cpp" 
     "src/Benchmark/BenchmarkEntity.h" 
-    "src/Benchmark/MovementBenchmark.h" "src/Benchmark/CollisionBenchmark.h" "include/Systems/MovementSystem.h" "src/Systems/MovementSystem.cpp")
+    "src/Benchmark/MovementBenchmark.h" "src/Benchmark/CollisionBenchmark.h" "include/Systems/MovementSystem.h" "src/Systems/MovementSystem.cpp" "include/Components/SpriteComponent.h")
 
     target_compile_definitions(
         MiniGameRuntime

@@ -6,6 +6,7 @@
 #include "Components/TransformComponent.h"
 #include "Components/VelocityComponent.h"
 #include "Components/AABBComponent.h"
+#include "Components/SpriteComponent.h"
 
 class World {
 public:
@@ -28,6 +29,11 @@ public:
 	AABBComponent& GetAABB(Entity entity);
 	bool HasAABB(Entity entity) const;
 
+	// 缩放组件接口
+	void AddSprite(Entity entity, const SpriteComponent& component);
+	const SpriteComponent& GetSprite(Entity entity) const;
+	bool HasSprite(Entity entity) const;
+
 	//void Update(float deltaTime); // 世界更新心跳
 	// 每过去一帧，main 函数里的主循环就会调用一次 world.Update()，告诉世界：“时间又前进了，请更新你内部所有实体的状态！”
 
@@ -42,6 +48,9 @@ private:
 
 	// 3. 碰撞组件大账本：Entity ID -> AABBComponent
 	std::unordered_map<Entity, AABBComponent> m_aabbComponents;
+
+	// 缩放组件账本
+	std::unordered_map<Entity, SpriteComponent> m_spriteComponents;
 
 	// 友元 特权通行证：允许 CollisionSystem 能够直接读取私有账本，进行批量物理计算
 	friend class CollisionSystem;

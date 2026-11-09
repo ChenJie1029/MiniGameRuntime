@@ -15,7 +15,7 @@
 #include "Core/World.h"
 #include "Common/Entity.h"
 #include "Components/TransformComponent.h"
-#include "Components/AABBComponent.h"
+#include "Components/SpriteComponent.h"
 
 #include "Components/VelocityComponent.h"
 #include "Systems/CollisionSystem.h"
@@ -136,14 +136,13 @@ void DrawEntity(const Renderer& renderer, World& world, Entity entity, GLuint te
     }
 
     const TransformComponent& transform = world.GetTransform(entity); // 根据Entity ID从World中取得位置组件
+    const SpriteComponent& spriteComponent = world.GetSprite(entity);
 
-    const AABBComponent& aabb = world.GetAABB(entity);// 根据Entity ID取得AABB组件
+    //const AABBComponent& aabb = world.GetAABB(entity);// 根据Entity ID取得AABB组件
 
-    Sprite sprite{ // 创建临时Sprite
+    const Sprite sprite{ // 创建临时Sprite
         transform.position, // Sprite位置直接来自Transform
-        Vec2{aabb.halfExtents.x * 2.0f, // AABB保存的是半宽和半高，而Sprite的缩放需要完整宽度和高度，因此乘2
-             aabb.halfExtents.y * 2.0f
-        },
+        spriteComponent.drawScale,
         0.0f, // 没有旋转
         textureId // 让这个临时Sprite使用传进来的纹理
     };

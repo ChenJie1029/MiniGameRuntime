@@ -5,16 +5,19 @@
 #include "Components/VelocityComponent.h"
 #include "Components/AABBComponent.h"
 #include "Math/Vec2.h"
+#include "Components/SpriteComponent.h"
 
 void Scene::Initialize() {
 	player = world.CreateEntity();
 	world.AddTransform(player, TransformComponent{Vec2{-0.4f, 0.0f}});
 	world.AddAABB(player, AABBComponent{ 0.2f, 0.2f });
 	world.AddVelocity(player, VelocityComponent{ Vec2{0.0f, 0.0f} });
+	world.AddSprite(player, SpriteComponent{ Vec2{0.2f, 0.2f} });
 
 	Entity wall = world.CreateEntity();
 	world.AddTransform(wall, TransformComponent{ Vec2{0.5f, 0.0f} });
 	world.AddAABB(wall, AABBComponent{ 0.2f, 0.6f });
+	world.AddSprite(wall, SpriteComponent{ Vec2{0.2f, 0.6f} });
 
 	renderEntities = { player, wall };
 }
