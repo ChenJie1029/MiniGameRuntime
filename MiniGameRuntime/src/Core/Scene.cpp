@@ -23,8 +23,6 @@ void Scene::Initialize() {
 	world.AddTransform(movingMarker, TransformComponent{ Vec2{-0.65f, 0.45f} });
 	world.AddVelocity(movingMarker, VelocityComponent{ Vec2{0.12f, 0.0f} });
 	world.AddSprite(movingMarker, SpriteComponent{ Vec2{0.14f, 0.14f} });
-
-	renderEntities = { player, wall, movingMarker};
 }
 
 void Scene::DestroyEntity(Entity entity) {
@@ -33,7 +31,6 @@ void Scene::DestroyEntity(Entity entity) {
 	}
 
 	world.DestroyEntity(entity);
-	std::erase(renderEntities, entity); // 移除绘制名单中的编号
 
 	if (player == entity) { // 如果被销毁的是玩家，就把Scene记录的玩家ID改回无效值
 		player = INVALID_ENTITY;
@@ -42,7 +39,6 @@ void Scene::DestroyEntity(Entity entity) {
 
 void Scene::Reset() {
 	world.Clear();
-	renderEntities.clear();
 	player = INVALID_ENTITY;
 	Initialize();
 }

@@ -1,4 +1,5 @@
 #include <stdexcept> //引入标准异常，用于处理非法查询
+#include <algorithm>
 
 #include "Core/World.h"
 
@@ -113,4 +114,18 @@ const SpriteComponent& World::GetSprite(Entity entity) const {
 
 bool World::HasSprite(Entity entity) const {
 	return m_spriteComponents.find(entity) != m_spriteComponents.end();
+}
+
+std::vector<Entity> World::GetDrawableEntities() const {
+	std::vector<Entity> entities; // 创建一个空列表，收集这次查询找到的编号
+
+	for (const auto& entry : m_spriteComponents) {
+		const Entity entity = entry.first;
+		if (HasTransform(entity)) {
+			entities.push_back(entity);
+		}
+	}
+
+	std::sort(entities.begin(), entities.end());
+	return entities;
 }

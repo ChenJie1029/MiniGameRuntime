@@ -736,7 +736,7 @@ void main()
                 camera.position = Vec2{ 0.0f, 0.0f };
 
                 std::cout << "New player ID: " << scene.player << '\n';
-                std::cout << "Render count: " << scene.renderEntities.size() << '\n';
+                std::cout << "Render count: " << scene.world.GetDrawableEntities().size() << '\n';
                 std::cout << "Old player Transform remains: " << scene.world.HasTransform(oldPlayer) << '\n';
             }
             else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_DELETE) {
@@ -745,7 +745,7 @@ void main()
                     scene.DestroyEntity(removedEntity); // 执行销毁
 
                     std::cout << "Player ID: " << scene.player << '\n';
-                    std::cout << "Render count: " << scene.renderEntities.size() << '\n';
+                    std::cout << "Render count: " << scene.world.GetDrawableEntities().size() << '\n';
                     std::cout << "Transform remains: " << scene.world.HasTransform(removedEntity) << '\n';
                     std::cout << "Velocity remains: " << scene.world.HasVelocity(removedEntity) << '\n';
                     std::cout << "AABB remains: " << scene.world.HasAABB(removedEntity) << '\n';
@@ -840,7 +840,7 @@ void main()
         //    DrawEntity(renderer, world, entity, texture);
         //}
 
-        for (Entity entity : scene.renderEntities) { // 依次取出需要绘制的Entity ID
+        for (Entity entity : scene.world.GetDrawableEntities()) { // 依次取出需要绘制的Entity ID
             DrawEntity(renderer, scene.world, entity, texture);
         }
 
