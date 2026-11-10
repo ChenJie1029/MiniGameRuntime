@@ -31,12 +31,13 @@ add_executable(MiniGameRuntime
     src/Core/EventBus.cpp  
     src/Core/Scene.cpp
     src/Systems/MovementSystem.cpp
+    src/Input/InputState.cpp
     "src/demos/LifetimeDemo.cpp" 
     "include/Core/ObjectPool.h" 
     "include/Core/Timer.h" 
     "src/Core/Timer.cpp" 
     "src/Benchmark/BenchmarkEntity.h" 
-    "src/Benchmark/MovementBenchmark.h" "src/Benchmark/CollisionBenchmark.h" "include/Systems/MovementSystem.h" "src/Systems/MovementSystem.cpp" "include/Components/SpriteComponent.h")
+    "src/Benchmark/MovementBenchmark.h" "src/Benchmark/CollisionBenchmark.h" "include/Systems/MovementSystem.h" "src/Systems/MovementSystem.cpp" "include/Components/SpriteComponent.h" "include/Input/InputState.h" "src/Input/InputState.cpp")
 
     target_compile_definitions(
         MiniGameRuntime

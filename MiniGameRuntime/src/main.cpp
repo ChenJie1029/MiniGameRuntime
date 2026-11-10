@@ -23,6 +23,7 @@
 #include "Core/Scene.h"
 
 #include "Systems/MovementSystem.h"
+#include "Input/InputState.h"
 
 constexpr int WINDOW_WIDTH = 800;
 constexpr int WINDOW_HEIGHT = 600;
@@ -757,34 +758,36 @@ void main()
             break;
         }
 
-        const Uint8* keyboardState = SDL_GetKeyboardState(nullptr); // 第一行是取得键盘按键状态表的地址 1：这个键正被按住 0：这个键没有被按住
+        //const Uint8* keyboardState = SDL_GetKeyboardState(nullptr); // 第一行是取得键盘按键状态表的地址 1：这个键正被按住 0：这个键没有被按住
 
-        // 后两行是准备保存当前想移动的方向，初始都为0
-        float directionX = 0.0f;
-        float directionY = 0.0f;
+        //// 后两行是准备保存当前想移动的方向，初始都为0
+        //float directionX = 0.0f;
+        //float directionY = 0.0f;
 
-        if (keyboardState[SDL_SCANCODE_W]) {
-            directionY += 1.0f;
-        }
+        //if (keyboardState[SDL_SCANCODE_W]) {
+        //    directionY += 1.0f;
+        //}
 
-        if (keyboardState[SDL_SCANCODE_S]) {
-            directionY -= 1.0f;
-        }
+        //if (keyboardState[SDL_SCANCODE_S]) {
+        //    directionY -= 1.0f;
+        //}
 
-        if (keyboardState[SDL_SCANCODE_A]) {
-            directionX -= 1.0f;
-        }
+        //if (keyboardState[SDL_SCANCODE_A]) {
+        //    directionX -= 1.0f;
+        //}
 
-        if (keyboardState[SDL_SCANCODE_D]) {
-            directionX += 1.0f;
-        }
+        //if (keyboardState[SDL_SCANCODE_D]) {
+        //    directionX += 1.0f;
+        //}
 
-        // 加入归一化操作确保斜向速度和正向速度保持一致
-        float directionLength = std::sqrt(directionX * directionX + directionY * directionY);
-        if (directionLength > 0.0f) {
-            directionX /= directionLength;
-            directionY /= directionLength;
-        }
+        //// 加入归一化操作确保斜向速度和正向速度保持一致
+        //float directionLength = std::sqrt(directionX * directionX + directionY * directionY);
+        //if (directionLength > 0.0f) {
+        //    directionX /= directionLength;
+        //    directionY /= directionLength;
+        //}
+
+        const InputState input = ReadInputState();
 
         //VelocityComponent& playerVelocity = world.GetVelocity(player); // 声明一个Velocity组件引用  用输入修改速度
         //playerVelocity.velocity.x = directionX * moveSpeed; // 这里只计算速度不计算位移，所以不 *deltaTime
@@ -793,10 +796,15 @@ void main()
         //world.Update(deltaTime); // *deltaTime用来更新位移
         //collisionSystem.Update(world); // 用来计算所有的物体碰撞
 
+        //if (scene.world.HasVelocity(scene.player)) {
+        //    VelocityComponent& playerVelocity = scene.world.GetVelocity(scene.player);
+        //    playerVelocity.velocity.x = directionX * moveSpeed;
+        //    playerVelocity.velocity.y = directionY * moveSpeed;
+        //}
+
         if (scene.world.HasVelocity(scene.player)) {
             VelocityComponent& playerVelocity = scene.world.GetVelocity(scene.player);
-            playerVelocity.velocity.x = directionX * moveSpeed;
-            playerVelocity.velocity.y = directionY * moveSpeed;
+            playerVelocity.velocity = input.playerDirection * moveSpeed;
         }
 
         movementSystem.Update(scene.world, deltaTime);
@@ -807,21 +815,23 @@ void main()
         Mat4 viewMatrix = CreateModelMatrix(-camera.position.x, -camera.position.y, 0.0f, 1.0f, 1.0f);
 
         // 移动摄像头视角
-        if (keyboardState[SDL_SCANCODE_UP]) {
-            camera.position.y += cameraSpeed * deltaTime;
-        }
+        //if (keyboardState[SDL_SCANCODE_UP]) {
+        //    camera.position.y += cameraSpeed * deltaTime;
+        //}
 
-        if (keyboardState[SDL_SCANCODE_DOWN]) {
-            camera.position.y -= cameraSpeed * deltaTime;
-        }
+        //if (keyboardState[SDL_SCANCODE_DOWN]) {
+        //    camera.position.y -= cameraSpeed * deltaTime;
+        //}
 
-        if (keyboardState[SDL_SCANCODE_LEFT]) {
-            camera.position.x -= cameraSpeed * deltaTime;
-        }
+        //if (keyboardState[SDL_SCANCODE_LEFT]) {
+        //    camera.position.x -= cameraSpeed * deltaTime;
+        //}
 
-        if (keyboardState[SDL_SCANCODE_RIGHT]) {
-            camera.position.x += cameraSpeed * deltaTime;
-        }
+        //if (keyboardState[SDL_SCANCODE_RIGHT]) {
+        //    camera.position.x += cameraSpeed * deltaTime;
+        //}
+        camera.position.x += input.cameraDirection.x * cameraSpeed * deltaTime;
+        camera.position.y += input.cameraDirection.y * cameraSpeed * deltaTime;
 
         // 指定OpenGL清屏颜色 OpenGL颜色范围是：0.0 ～ 1.0  红、绿、蓝、透明度
         glClearColor(
