@@ -19,7 +19,12 @@ void Scene::Initialize() {
 	world.AddAABB(wall, AABBComponent{ 0.2f, 0.6f });
 	world.AddSprite(wall, SpriteComponent{ Vec2{0.2f, 0.6f} });
 
-	renderEntities = { player, wall };
+	Entity movingMarker = world.CreateEntity();
+	world.AddTransform(movingMarker, TransformComponent{ Vec2{-0.65f, 0.45f} });
+	world.AddVelocity(movingMarker, VelocityComponent{ Vec2{0.12f, 0.0f} });
+	world.AddSprite(movingMarker, SpriteComponent{ Vec2{0.14f, 0.14f} });
+
+	renderEntities = { player, wall, movingMarker};
 }
 
 void Scene::DestroyEntity(Entity entity) {

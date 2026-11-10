@@ -131,7 +131,7 @@ void DrawSprite(
 
 void DrawEntity(const Renderer& renderer, World& world, Entity entity, GLuint textureId) { // World到Sprite的转换函数   
     // 提供绘制需要的Shader、Uniform、VAO和索引数量   提供实体的组件数据   指定要绘制哪个Entity ID   指定该实体使用哪张OpenGL纹理
-    if (!world.HasTransform(entity) || !world.HasAABB(entity)) { // 位置和边界信息
+    if (!world.HasTransform(entity) || !world.HasSprite(entity)) { // 位置和边界信息
         return;
     }
 
