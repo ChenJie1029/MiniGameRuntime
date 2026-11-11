@@ -713,7 +713,16 @@ void main()
 
         previousCounter = currentCounter;
 
-        SDL_Event event;
+        //SDL_Event event;
+
+        ////while (SDL_PollEvent(&event)) {
+        ////    if (event.type == SDL_QUIT) {
+        ////        running = false;
+        ////    }
+        ////    else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
+        ////        running = false;
+        ////    }
+        ////}
 
         //while (SDL_PollEvent(&event)) {
         //    if (event.type == SDL_QUIT) {
@@ -722,40 +731,62 @@ void main()
         //    else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
         //        running = false;
         //    }
+        //    else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_r && event.key.repeat == 0) {
+        //        Entity oldPlayer = scene.player;
+        //        scene.Reset();
+        //        camera.position = Vec2{ 0.0f, 0.0f };
+
+        //        std::cout << "New player ID: " << scene.player << '\n';
+        //        std::cout << "Render count: " << scene.world.GetDrawableEntities().size() << '\n';
+        //        std::cout << "Old player Transform remains: " << scene.world.HasTransform(oldPlayer) << '\n';
+        //    }
+        //    else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_DELETE) {
+        //        if (scene.player != INVALID_ENTITY) {
+        //            Entity removedEntity = scene.player; // 保存原玩家ID
+        //            scene.DestroyEntity(removedEntity); // 执行销毁
+
+        //            std::cout << "Player ID: " << scene.player << '\n';
+        //            std::cout << "Render count: " << scene.world.GetDrawableEntities().size() << '\n';
+        //            std::cout << "Transform remains: " << scene.world.HasTransform(removedEntity) << '\n';
+        //            std::cout << "Velocity remains: " << scene.world.HasVelocity(removedEntity) << '\n';
+        //            std::cout << "AABB remains: " << scene.world.HasAABB(removedEntity) << '\n';
+        //        }
+        //    }
         //}
 
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                running = false;
-            }
-            else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
-                running = false;
-            }
-            else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_r && event.key.repeat == 0) {
-                Entity oldPlayer = scene.player;
-                scene.Reset();
-                camera.position = Vec2{ 0.0f, 0.0f };
+        //if (!running) {
+        //    break;
+        //}
 
-                std::cout << "New player ID: " << scene.player << '\n';
-                std::cout << "Render count: " << scene.world.GetDrawableEntities().size() << '\n';
-                std::cout << "Old player Transform remains: " << scene.world.HasTransform(oldPlayer) << '\n';
-            }
-            else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_DELETE) {
-                if (scene.player != INVALID_ENTITY) {
-                    Entity removedEntity = scene.player; // 保存原玩家ID
-                    scene.DestroyEntity(removedEntity); // 执行销毁
+        const InputActions actions = ReadInputActions();
 
-                    std::cout << "Player ID: " << scene.player << '\n';
-                    std::cout << "Render count: " << scene.world.GetDrawableEntities().size() << '\n';
-                    std::cout << "Transform remains: " << scene.world.HasTransform(removedEntity) << '\n';
-                    std::cout << "Velocity remains: " << scene.world.HasVelocity(removedEntity) << '\n';
-                    std::cout << "AABB remains: " << scene.world.HasAABB(removedEntity) << '\n';
-                }
-            }
+        if (actions.quitRequested) {
+            running = false;
         }
 
         if (!running) {
             break;
+        }
+
+        if (actions.resetRequested) {
+            Entity oldPlayer = scene.player;
+            scene.Reset();
+            camera.position = Vec2{ 0.0f, 0.0f };
+
+            std::cout << "New player ID: " << scene.player << '\n';
+            std::cout << "Render count: " << scene.world.GetDrawableEntities().size() << '\n';
+            std::cout << "Old player Transform remains: " << scene.world.HasTransform(oldPlayer) << '\n';
+        }
+
+        if (actions.deletePlayerRequested && scene.player != INVALID_ENTITY) {
+            Entity removedEntity = scene.player;
+            scene.DestroyEntity(removedEntity);
+
+            std::cout << "Player ID: " << scene.player << '\n';
+            std::cout << "Render count: " << scene.world.GetDrawableEntities().size() << '\n';
+            std::cout << "Transform remains: " << scene.world.HasTransform(removedEntity) << '\n';
+            std::cout << "Velocity remains: " << scene.world.HasVelocity(removedEntity) << '\n';
+            std::cout << "AABB remains: " << scene.world.HasAABB(removedEntity) << '\n';
         }
 
         //const Uint8* keyboardState = SDL_GetKeyboardState(nullptr); // 第一行是取得键盘按键状态表的地址 1：这个键正被按住 0：这个键没有被按住

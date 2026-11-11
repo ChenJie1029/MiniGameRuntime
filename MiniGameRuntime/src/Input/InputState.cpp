@@ -43,3 +43,27 @@ InputState ReadInputState() {
 
 	return InputState{ playerDirection, cameraDirection };
 }
+
+InputActions ReadInputActions() {
+	InputActions actions{};
+	SDL_Event event{};
+
+	while (SDL_PollEvent(&event)) {
+		if (event.type == SDL_QUIT) {
+			actions.quitRequested = true;
+		}
+		else if (event.type == SDL_KEYDOWN && event.key.repeat == 0) {
+			if (event.key.keysym.sym == SDLK_ESCAPE) {
+				actions.quitRequested = true;
+			}
+			else if (event.key.keysym.sym == SDLK_r) {
+				actions.resetRequested = true;
+			}
+			else if (event.key.keysym.sym == SDLK_DELETE) {
+				actions.deletePlayerRequested = true;
+			}
+		}
+	}
+
+	return actions;
+}
