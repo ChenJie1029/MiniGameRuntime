@@ -25,6 +25,8 @@
 #include "Systems/MovementSystem.h"
 #include "Input/InputState.h"
 
+#include "Systems/PlayerControlSystem.h"
+
 constexpr int WINDOW_WIDTH = 800;
 constexpr int WINDOW_HEIGHT = 600;
 
@@ -698,6 +700,7 @@ void main()
     Scene scene;
     scene.Initialize();
 
+    PlayerControlSystem playerControlSystem;
     MovementSystem movementSystem; // 创建移动系统对象
     CollisionSystem collisionSystem; // 创建碰撞系统
 
@@ -833,10 +836,12 @@ void main()
         //    playerVelocity.velocity.y = directionY * moveSpeed;
         //}
 
-        if (scene.world.HasVelocity(scene.player)) {
-            VelocityComponent& playerVelocity = scene.world.GetVelocity(scene.player);
-            playerVelocity.velocity = input.playerDirection * moveSpeed;
-        }
+        //if (scene.world.HasVelocity(scene.player)) {
+        //    VelocityComponent& playerVelocity = scene.world.GetVelocity(scene.player);
+        //    playerVelocity.velocity = input.playerDirection * moveSpeed;
+        //}
+
+        playerControlSystem.Update(scene.world, scene.player, input.playerDirection, moveSpeed);
 
         movementSystem.Update(scene.world, deltaTime);
         collisionSystem.Update(scene.world);
