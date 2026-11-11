@@ -62,6 +62,9 @@ InputActions ReadInputActions() {
 			else if (event.key.keysym.sym == SDLK_DELETE) {
 				actions.deletePlayerRequested = true;
 			}
+			else if (event.key.keysym.sym == SDLK_p) {
+				actions.pauseRequested = true;
+			}
 		}
 	}
 

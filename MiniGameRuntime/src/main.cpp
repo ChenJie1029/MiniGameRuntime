@@ -705,6 +705,7 @@ void main()
     CollisionSystem collisionSystem; // 创建碰撞系统
 
     bool running = true;
+    bool isPaused = false;
 
     // 添加计时器
     const Uint64 performanceFrequency = SDL_GetPerformanceFrequency(); // 计时器每秒计数多少次
@@ -771,6 +772,10 @@ void main()
             break;
         }
 
+        if (actions.pauseRequested) { // 按下P，主循环切换状态
+            isPaused = !isPaused;
+        }
+
         if (actions.resetRequested) {
             Entity oldPlayer = scene.player;
             scene.Reset();
@@ -823,6 +828,16 @@ void main()
 
         const InputState input = ReadInputState();
 
+        if (!isPaused) {
+            playerControlSystem.Update(scene.world, scene.player, input.playerDirection, moveSpeed);
+
+            movementSystem.Update(scene.world, deltaTime);
+            collisionSystem.Update(scene.world);
+
+            camera.position.x += input.cameraDirection.x * cameraSpeed * deltaTime;
+            camera.position.y += input.cameraDirection.y * cameraSpeed * deltaTime;
+        }
+
         //VelocityComponent& playerVelocity = world.GetVelocity(player); // 声明一个Velocity组件引用  用输入修改速度
         //playerVelocity.velocity.x = directionX * moveSpeed; // 这里只计算速度不计算位移，所以不 *deltaTime
         //playerVelocity.velocity.y = directionY * moveSpeed;
@@ -840,11 +855,6 @@ void main()
         //    VelocityComponent& playerVelocity = scene.world.GetVelocity(scene.player);
         //    playerVelocity.velocity = input.playerDirection * moveSpeed;
         //}
-
-        playerControlSystem.Update(scene.world, scene.player, input.playerDirection, moveSpeed);
-
-        movementSystem.Update(scene.world, deltaTime);
-        collisionSystem.Update(scene.world);
         
         //Mat4 modelMatrix = CreateModelMatrix(playerSprite.position.x, playerSprite.position.y, playerSprite.rotationRadians, playerSprite.scale.x, playerSprite.scale.y);
 
