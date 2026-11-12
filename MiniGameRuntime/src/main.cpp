@@ -26,6 +26,7 @@
 #include "Input/InputState.h"
 
 #include "Systems/PlayerControlSystem.h"
+#include "Resources/Texture2D.h"
 
 constexpr int WINDOW_WIDTH = 800;
 constexpr int WINDOW_HEIGHT = 600;
@@ -501,55 +502,65 @@ void main()
         return 1;
     }
 
-    GLuint texture = 0; // 准备一个无符号整数变量texture，用于保存纹理编号
+    //GLuint texture = 0; // 准备一个无符号整数变量texture，用于保存纹理编号
 
-    glGenTextures(1, &texture); // 申请一个纹理编号，并写入texture
+    //glGenTextures(1, &texture); // 申请一个纹理编号，并写入texture
 
-    glActiveTexture(GL_TEXTURE0); // 选择第0号纹理单元。片段着色器中的 objectTexture之后也会使用0号纹理单元
+    //glActiveTexture(GL_TEXTURE0); // 选择第0号纹理单元。片段着色器中的 objectTexture之后也会使用0号纹理单元
 
-    glBindTexture(GL_TEXTURE_2D, texture); // 把这个编号对应的纹理绑定为当前操作的二维纹理。之后针对 GL_TEXTURE_2D 的参数设置和图片上传，就作用于它
+    //glBindTexture(GL_TEXTURE_2D, texture); // 把这个编号对应的纹理绑定为当前操作的二维纹理。之后针对 GL_TEXTURE_2D 的参数设置和图片上传，就作用于它
 
-    // 设置纹理的取样规则  设置纹理的边界处理方式：当 UV 超出图片范围时，使用最近的边缘颜色
-    glTexParameteri(
-        GL_TEXTURE_2D,
-        GL_TEXTURE_WRAP_S,
-        GL_CLAMP_TO_EDGE
-    );
+    //// 设置纹理的取样规则  设置纹理的边界处理方式：当 UV 超出图片范围时，使用最近的边缘颜色
+    //glTexParameteri(
+    //    GL_TEXTURE_2D,
+    //    GL_TEXTURE_WRAP_S,
+    //    GL_CLAMP_TO_EDGE
+    //);
 
-    glTexParameteri(
-        GL_TEXTURE_2D,
-        GL_TEXTURE_WRAP_T,
-        GL_CLAMP_TO_EDGE
-    );
+    //glTexParameteri(
+    //    GL_TEXTURE_2D,
+    //    GL_TEXTURE_WRAP_T,
+    //    GL_CLAMP_TO_EDGE
+    //);
 
-    glTexParameteri(
-        GL_TEXTURE_2D,
-        GL_TEXTURE_MIN_FILTER, // 纹理显示得比较小时，怎样取颜色
-        GL_LINEAR_MIPMAP_LINEAR 
-    );
+    //glTexParameteri(
+    //    GL_TEXTURE_2D,
+    //    GL_TEXTURE_MIN_FILTER, // 纹理显示得比较小时，怎样取颜色
+    //    GL_LINEAR_MIPMAP_LINEAR 
+    //);
 
-    glTexParameteri(
-        GL_TEXTURE_2D,
-        GL_TEXTURE_MAG_FILTER, // 纹理显示得比较大时，怎样取颜色
-        GL_LINEAR
-    );
+    //glTexParameteri(
+    //    GL_TEXTURE_2D,
+    //    GL_TEXTURE_MAG_FILTER, // 纹理显示得比较大时，怎样取颜色
+    //    GL_LINEAR
+    //);
 
-    // 上传图片
-    glTexImage2D(
-        GL_TEXTURE_2D, // 操作当前绑定的二维纹理
-        0, // 上传到第 0 层：原始图像层
-        GL_RGBA, // 纹理内部保存 RGBA 分量
-        textureWidth, // 图片实际宽度
-        textureHeight, // 图片实际高度
-        0, // 边框参数，必须为 0
-        GL_RGBA, // 传入像素按 R、G、B、A 排列
-        GL_UNSIGNED_BYTE, // 每个分量是一个无符号字节
-        texturePixels // 从这个地址读取像素数据
-    );
+    //// 上传图片
+    //glTexImage2D(
+    //    GL_TEXTURE_2D, // 操作当前绑定的二维纹理
+    //    0, // 上传到第 0 层：原始图像层
+    //    GL_RGBA, // 纹理内部保存 RGBA 分量
+    //    textureWidth, // 图片实际宽度
+    //    textureHeight, // 图片实际高度
+    //    0, // 边框参数，必须为 0
+    //    GL_RGBA, // 传入像素按 R、G、B、A 排列
+    //    GL_UNSIGNED_BYTE, // 每个分量是一个无符号字节
+    //    texturePixels // 从这个地址读取像素数据
+    //);
 
-    glGenerateMipmap(GL_TEXTURE_2D); // 为当前二维纹理生成 mipmap，也就是同一张图片的一组逐级缩小版本
+    //glGenerateMipmap(GL_TEXTURE_2D); // 为当前二维纹理生成 mipmap，也就是同一张图片的一组逐级缩小版本
 
-    stbi_image_free(texturePixels); // 释放 stbi_load() 为图片分配的 CPU 内存
+    //stbi_image_free(texturePixels); // 释放 stbi_load() 为图片分配的 CPU 内存
+
+    Texture2D texture;
+
+    if (!texture.LoadFromFile(texturePath)) {
+        glDeleteProgram(shaderProgram);
+        SDL_GL_DeleteContext(openGLContext);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return 1;
+    }
 
     // constexpr float moveStep = 0.1f; //定义一个编译时常量 moveStep，值为 0.1f，用于表示每次执行移动更新时增加或减少多少
     constexpr float moveSpeed = 0.8f;
@@ -897,7 +908,7 @@ void main()
         //}
 
         for (Entity entity : scene.world.GetDrawableEntities()) { // 依次取出需要绘制的Entity ID
-            DrawEntity(renderer, scene.world, entity, texture);
+            DrawEntity(renderer, scene.world, entity, texture.GetId());
         }
 
         EndScene();
@@ -910,7 +921,7 @@ void main()
     glUseProgram(0);
 
     // OpenGL资源删除
-    glDeleteTextures(1, &texture);
+    texture.Destroy();
     glDeleteBuffers(1, &elementBufferObject);
     glDeleteBuffers(1, &vertexBufferObject);
     glDeleteVertexArrays(1, &vertexArrayObject);
