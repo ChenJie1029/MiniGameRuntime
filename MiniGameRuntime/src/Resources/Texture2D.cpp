@@ -6,10 +6,15 @@
 #include <iostream>
 
 bool Texture2D::LoadFromFile(const std::string& path) { // 传入图片路径
+	if (m_textureId != 0) {
+		return false;
+	}
+
 	int width = 0;
 	int height = 0;
 	int channels = 0;
 
+	stbi_set_flip_vertically_on_load(true);
 	unsigned char* pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 
 	if (pixels == nullptr) {
@@ -48,13 +53,9 @@ GLuint Texture2D::GetId() const {  // 把编号按值返回。main()把编号交
 	return m_textureId;
 }
 
-void Texture2D::Destroy() { 
-	if (m_textureId == 0) {
-		return;
+Texture2D::~Texture2D() {
+	if (m_textureId != 0) {
+		glDeleteTextures(1, &m_textureId);
 	}
-
-	glDeleteTextures(1, &m_textureId);
-	m_textureId = 0;
 }
-// Destroy()先检查编号是否为0。有纹理时glDeleteTextures(1, &m_textureId)从这个地址读取1个编号并删除对应的纹理，下一行再把成员设回0。
-// 对比前面的glGenTextures，同样传入 &m_textureId，创建时OpenGL写入编号，删除时OpenGL读取编号。主函数在SDL_GL_DeleteContext 之前调用 Destroy()，这时 OpenGL 上下文仍然可用。
+// m_textureId != 0 表示对象持有一个纹理编号。`glDeleteTextures` 接收要删除的数量 1 和编号的地址。图片加载失败时，编号还是 0，析构函数会跳过删除

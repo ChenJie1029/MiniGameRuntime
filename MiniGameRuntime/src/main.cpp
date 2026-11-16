@@ -7,9 +7,6 @@
 #include <glad/gl.h>
 #include <SDL.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "ThirdParty/stb_image.h"
-
 #include "Math/Vec2.h"
 
 #include "Core/World.h"
@@ -465,42 +462,42 @@ void main()
         -0.5f, 0.35f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f   // 3: 左上  黄
     };
 
-    const std::string texturePath = std::string(MGR_ASSET_DIR) + "test.png"; // 拼接图片路径
+    //const std::string texturePath = std::string(MGR_ASSET_DIR) + "test.png"; // 拼接图片路径
 
-    stbi_set_flip_vertically_on_load(true); // 设置加载选项，接下来读取图片时把像素行上下翻转，让返回数据从图片底部开始排列，方便配合前面使用的 OpenGL 纹理坐标约定
+    //stbi_set_flip_vertically_on_load(true); // 设置加载选项，接下来读取图片时把像素行上下翻转，让返回数据从图片底部开始排列，方便配合前面使用的 OpenGL 纹理坐标约定
 
-    // 准备三个变量，供加载函数填写结果
-    int textureWidth = 0; // 图片宽度
-    int textureHeight = 0; // 图片高度
-    int textureChannels = 0; // 原始图片通道数
+    //// 准备三个变量，供加载函数填写结果
+    //int textureWidth = 0; // 图片宽度
+    //int textureHeight = 0; // 图片高度
+    //int textureChannels = 0; // 原始图片通道数
 
-    unsigned char* texturePixels = stbi_load( // stbi_load负责读取并解码图片  函数返回像素数据的起始地址，保存到 texturePixels
-        texturePath.c_str(), // 提供路径字符串的 const char* 地址
-        &textureWidth,
-        &textureHeight,
-        &textureChannels,
-        STBI_rgb_alpha // 要求返回的像素统一使用RGBA四通道格式
-    );
+    //unsigned char* texturePixels = stbi_load( // stbi_load负责读取并解码图片  函数返回像素数据的起始地址，保存到 texturePixels
+    //    texturePath.c_str(), // 提供路径字符串的 const char* 地址
+    //    &textureWidth,
+    //    &textureHeight,
+    //    &textureChannels,
+    //    STBI_rgb_alpha // 要求返回的像素统一使用RGBA四通道格式
+    //);
 
-    if (texturePixels == nullptr) {
-        std::cout
-            << "Failed to load texture: "
-            << texturePath
-            << std::endl;
+    //if (texturePixels == nullptr) {
+    //    std::cout
+    //        << "Failed to load texture: "
+    //        << texturePath
+    //        << std::endl;
 
-        std::cout
-            << "Reason: "
-            << stbi_failure_reason()
-            << std::endl;
+    //    std::cout
+    //        << "Reason: "
+    //        << stbi_failure_reason()
+    //        << std::endl;
 
-        glDeleteProgram(shaderProgram); // 	请求删除之前创建的着色器程序，释放其资源
+    //    glDeleteProgram(shaderProgram); // 	请求删除之前创建的着色器程序，释放其资源
 
-        SDL_GL_DeleteContext(openGLContext);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
+    //    SDL_GL_DeleteContext(openGLContext);
+    //    SDL_DestroyWindow(window);
+    //    SDL_Quit();
 
-        return 1;
-    }
+    //    return 1;
+    //}
 
     //GLuint texture = 0; // 准备一个无符号整数变量texture，用于保存纹理编号
 
@@ -552,15 +549,20 @@ void main()
 
     //stbi_image_free(texturePixels); // 释放 stbi_load() 为图片分配的 CPU 内存
 
-    Texture2D texture;
+    //Texture2D texture;
 
-    if (!texture.LoadFromFile(texturePath)) {
-        glDeleteProgram(shaderProgram);
-        SDL_GL_DeleteContext(openGLContext);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
-    }
+    //if (!texture.LoadFromFile(texturePath)) {
+    //    glDeleteProgram(shaderProgram);
+    //    SDL_GL_DeleteContext(openGLContext);
+    //    SDL_DestroyWindow(window);
+    //    SDL_Quit();
+    //    return 1;
+    //}
+
+    const std::string texturePath = std::string(MGR_ASSET_DIR) + "test.png";
+    int exitCode = 1;
+
+    if (Texture2D texture; texture.LoadFromFile(texturePath)) {
 
     // constexpr float moveStep = 0.1f; //定义一个编译时常量 moveStep，值为 0.1f，用于表示每次执行移动更新时增加或减少多少
     constexpr float moveSpeed = 0.8f;
@@ -920,16 +922,17 @@ void main()
     glBindVertexArray(0);
     glUseProgram(0);
 
-    // OpenGL资源删除
-    texture.Destroy();
     glDeleteBuffers(1, &elementBufferObject);
     glDeleteBuffers(1, &vertexBufferObject);
     glDeleteVertexArrays(1, &vertexArrayObject);
-    glDeleteProgram(shaderProgram);
 
+    exitCode = 0;
+    } // if 结束，texture 在这里析构
+
+    glDeleteProgram(shaderProgram);
     SDL_GL_DeleteContext(openGLContext);
     SDL_DestroyWindow(window);
     SDL_Quit();
 
-    return 0;
+    return exitCode;
 }
