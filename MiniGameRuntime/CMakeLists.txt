@@ -34,12 +34,13 @@ add_executable(MiniGameRuntime
     src/Input/InputState.cpp
     src/Systems/PlayerControlSystem.cpp
     src/Resources/Texture2D.cpp
+    src/Resources/ShaderProgram.cpp
     "src/demos/LifetimeDemo.cpp" 
     "include/Core/ObjectPool.h" 
     "include/Core/Timer.h" 
     "src/Core/Timer.cpp" 
     "src/Benchmark/BenchmarkEntity.h" 
-    "src/Benchmark/MovementBenchmark.h" "src/Benchmark/CollisionBenchmark.h" "include/Systems/MovementSystem.h" "src/Systems/MovementSystem.cpp" "include/Components/SpriteComponent.h" "include/Input/InputState.h" "src/Input/InputState.cpp" "include/Systems/PlayerControlSystem.h" "src/Systems/PlayerControlSystem.cpp" "include/Resources/Texture2D.h" "src/Resources/Texture2D.cpp")
+    "src/Benchmark/MovementBenchmark.h" "src/Benchmark/CollisionBenchmark.h" "include/Systems/MovementSystem.h" "src/Systems/MovementSystem.cpp" "include/Components/SpriteComponent.h" "include/Input/InputState.h" "src/Input/InputState.cpp" "include/Systems/PlayerControlSystem.h" "src/Systems/PlayerControlSystem.cpp" "include/Resources/Texture2D.h" "src/Resources/Texture2D.cpp" "include/Resources/ShaderProgram.h" "src/Resources/ShaderProgram.cpp")
 
     target_compile_definitions(
         MiniGameRuntime
