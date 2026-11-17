@@ -802,6 +802,7 @@ void main()
 
                     std::cout << "New player ID: " << scene.player << '\n';
                     std::cout << "Render count: " << scene.world.GetDrawableEntities().size() << '\n';
+                    std::cout << "Score: " << scene.score << '\n';
                     std::cout << "Old player Transform remains: " << scene.world.HasTransform(oldPlayer) << '\n';
                 }
 
@@ -860,6 +861,12 @@ void main()
 
                     if (collisionSystem.Overlaps(scene.world, scene.player, scene.wall)) {
                         scene.world.GetTransform(scene.player).position = previousPlayerPosition;
+                    }
+
+                    if (collisionSystem.Overlaps(scene.world, scene.player, scene.collectible)) {
+                        scene.DestroyEntity(scene.collectible);
+                        ++scene.score;
+                        std::cout << "Score: " << scene.score << '\n';
                     }
 
                     camera.position.x += input.cameraDirection.x * cameraSpeed * deltaTime;

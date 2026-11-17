@@ -23,6 +23,11 @@ void Scene::Initialize() {
 	world.AddTransform(movingMarker, TransformComponent{ Vec2{-0.65f, 0.45f} });
 	world.AddVelocity(movingMarker, VelocityComponent{ Vec2{0.12f, 0.0f} });
 	world.AddSprite(movingMarker, SpriteComponent{ Vec2{0.14f, 0.14f} });
+
+	collectible = world.CreateEntity();
+	world.AddTransform(collectible, TransformComponent{ Vec2{-0.4f, -0.5f} });
+	world.AddAABB(collectible, AABBComponent{ 0.1f, 0.1f });
+	world.AddSprite(collectible, SpriteComponent{ Vec2{0.1f, 0.1f} });
 }
 
 void Scene::DestroyEntity(Entity entity) {
@@ -39,11 +44,17 @@ void Scene::DestroyEntity(Entity entity) {
 	if (wall == entity) {
 		wall = INVALID_ENTITY;
 	}
+
+	if (collectible == entity) {
+		collectible = INVALID_ENTITY;
+	}
 }
 
 void Scene::Reset() {
 	world.Clear();
 	player = INVALID_ENTITY;
 	wall = INVALID_ENTITY;
+	collectible = INVALID_ENTITY;
+	score = 0;
 	Initialize();
 }

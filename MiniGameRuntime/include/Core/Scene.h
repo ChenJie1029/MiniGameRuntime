@@ -9,6 +9,9 @@ struct Scene {
 
 	Entity wall = INVALID_ENTITY;
 
+	Entity collectible = INVALID_ENTITY;
+	int score = 0;
+
 	void Initialize(); // Scene提供一个名为Initialize的操作
 	void DestroyEntity(Entity entity);
 	void Reset();
