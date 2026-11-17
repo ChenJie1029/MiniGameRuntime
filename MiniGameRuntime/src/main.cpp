@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstddef>
 #include <filesystem>
+#include <format>
 
 #include <glad/gl.h>
 #include <SDL.h>
@@ -733,6 +734,9 @@ void main()
             const Uint64 performanceFrequency = SDL_GetPerformanceFrequency(); // 计时器每秒计数多少次
             Uint64 previousCounter = SDL_GetPerformanceCounter(); // 取计数器当前的读数，保存到previousCounter，作为之后计算时间差的起点
 
+            Uint64 statsStartCounter = previousCounter; // 保存本轮统计的起点
+            int statsFrameCount = 0; // 记录从该起点开始完成的帧数
+
             while (running) {
                 Uint64 currentCounter = SDL_GetPerformanceCounter(); // 取计数器当前的度数，保存到currentCounter，用于计算和previousCounter的差值
                 float deltaTime = static_cast<float>(currentCounter - previousCounter) / static_cast<float>(performanceFrequency); // 计数差值 / 计数频率 = 具体经过时间
@@ -796,6 +800,7 @@ void main()
 
                 if (actions.pauseRequested) { // 按下P，主循环切换状态
                     isPaused = !isPaused;
+                    std::cout << (isPaused ? "[Game] Paused\n" : "[Game] Resumed\n");
                 }
 
                 if (actions.resetRequested) {
@@ -803,21 +808,23 @@ void main()
                     scene.Reset();
                     camera.position = Vec2{ 0.0f, 0.0f };
 
-                    std::cout << "New player ID: " << scene.player << '\n';
-                    std::cout << "Render count: " << scene.world.GetDrawableEntities().size() << '\n';
-                    std::cout << "Score: " << scene.score << '\n';
-                    std::cout << "Old player Transform remains: " << scene.world.HasTransform(oldPlayer) << '\n';
+                    std::cout << "[Scene] Reset | New player ID: " << scene.player
+                        << " | Render count: " << scene.world.GetDrawableEntities().size()
+                        << " | Score: " << scene.score
+                        << " | Old player Transform remains: " << scene.world.HasTransform(oldPlayer)
+                        << '\n';
                 }
 
                 if (actions.deletePlayerRequested && scene.player != INVALID_ENTITY) {
                     Entity removedEntity = scene.player;
                     scene.DestroyEntity(removedEntity);
 
-                    std::cout << "Player ID: " << scene.player << '\n';
-                    std::cout << "Render count: " << scene.world.GetDrawableEntities().size() << '\n';
-                    std::cout << "Transform remains: " << scene.world.HasTransform(removedEntity) << '\n';
-                    std::cout << "Velocity remains: " << scene.world.HasVelocity(removedEntity) << '\n';
-                    std::cout << "AABB remains: " << scene.world.HasAABB(removedEntity) << '\n';
+                    std::cout << "[Scene] Player deleted | Player ID: " << scene.player
+                        << " | Render count: " << scene.world.GetDrawableEntities().size()
+                        << " | Transform remains: " << scene.world.HasTransform(removedEntity)
+                        << " | Velocity remains: " << scene.world.HasVelocity(removedEntity)
+                        << " | AABB remains: " << scene.world.HasAABB(removedEntity)
+                        << '\n';
                 }
 
                 if (actions.loadRequested) {
@@ -957,6 +964,25 @@ void main()
 
                 // 将OpenGL绘制结果显示到窗口
                 SDL_GL_SwapWindow(window);
+
+                ++statsFrameCount;
+                const Uint64 statsNow = SDL_GetPerformanceCounter();
+                const double elapsedSeconds =
+                    static_cast<double>(statsNow - statsStartCounter) /
+                    static_cast<double>(performanceFrequency);
+
+                if (elapsedSeconds >= 1.0) {
+                    const double fps = statsFrameCount / elapsedSeconds;
+                    const double averageFrameMs = elapsedSeconds * 1000.0 / statsFrameCount;
+
+                    const std::string title = std::format(
+                        "MiniGameRuntime v2 | FPS {:.1f} | Avg {:.2f} ms | Score {} | {}",
+                        fps, averageFrameMs, scene.score, isPaused ? "Paused" : "Running");
+                    SDL_SetWindowTitle(window, title.c_str());
+
+                    statsStartCounter = statsNow;
+                    statsFrameCount = 0;
+                }
             }
 
             glBindVertexArray(0);
