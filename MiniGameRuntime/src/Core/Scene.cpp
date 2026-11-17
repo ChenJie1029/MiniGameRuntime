@@ -1,4 +1,10 @@
 #include <vector>
+#include <cmath>
+#include <fstream>
+#include <iomanip>
+#include <limits>
+#include <locale>
+#include <system_error>
 
 #include "Core/Scene.h"
 #include "Components/TransformComponent.h"
@@ -57,4 +63,69 @@ void Scene::Reset() {
 	collectible = INVALID_ENTITY;
 	score = 0;
 	Initialize();
+}
+
+bool Scene::Save(const std::filesystem::path& path) {
+	if (!world.HasTransform(player)) {
+		return false;
+	}
+
+	const Vec2& position = world.GetTransform(player).position;
+	if (!std::isfinite(position.x) || !std::isfinite(position.y) || (score != 0 && score != 1)) {
+		return false;
+	}
+
+	std::filesystem::path tempPath = path;
+	tempPath += ".tmp";
+	std::ofstream file(tempPath);
+	if (!file) {
+		return false;
+	}
+
+	file.imbue(std::locale::classic());
+	file << std::setprecision(std::numeric_limits<float>::max_digits10)
+		<< '[' << position.x << ", " << position.y << ", " << score << "]\n";
+	file.close();
+
+	std::error_code error;
+	if (file) {
+		std::filesystem::rename(tempPath, path, error);
+		if (!error) {
+			return true;
+		}
+	}
+
+	std::filesystem::remove(tempPath, error);
+	return false;
+}
+
+bool Scene::Load(const std::filesystem::path& path) {
+	std::ifstream file(path);
+	file.imbue(std::locale::classic());
+
+	Vec2 position{};
+	int loadedScore = 0;
+	char openBracket{}, firstComma{}, secondComma{}, closeBracket{};
+	if (!(file >> openBracket >> position.x >> firstComma
+		>> position.y >> secondComma >> loadedScore >> closeBracket)) {
+		return false;
+	}
+
+	file >> std::ws;
+	const bool validFormat = openBracket == '[' && firstComma == ',' &&
+		secondComma == ',' && closeBracket == ']' &&
+		file.eof() && !file.bad();
+	const bool validPosition = std::isfinite(position.x) && std::isfinite(position.y);
+	const bool validScore = loadedScore == 0 || loadedScore == 1;
+	if (!validFormat || !validPosition || !validScore) {
+		return false;
+	}
+
+	Reset();
+	world.GetTransform(player).position = position;
+	score = loadedScore;
+	if (score == 1) {
+		DestroyEntity(collectible);
+	}
+	return true;
 }

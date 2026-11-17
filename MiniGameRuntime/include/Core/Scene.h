@@ -1,4 +1,5 @@
 #pragma once
+#include <filesystem>
 
 #include "Core/World.h"
 #include "Common/Entity.h"
@@ -15,4 +16,7 @@ struct Scene {
 	void Initialize(); // Scene提供一个名为Initialize的操作
 	void DestroyEntity(Entity entity);
 	void Reset();
+
+	bool Save(const std::filesystem::path& path); // 存档文件的路径
+	bool Load(const std::filesystem::path& path);
 };

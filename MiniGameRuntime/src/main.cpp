@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <cstddef>
+#include <filesystem>
 
 #include <glad/gl.h>
 #include <SDL.h>
@@ -719,6 +720,8 @@ void main()
             Scene scene;
             scene.Initialize();
 
+            const std::filesystem::path savePath = std::filesystem::absolute("scene_save.json");
+
             PlayerControlSystem playerControlSystem;
             MovementSystem movementSystem; // 创建移动系统对象
             CollisionSystem collisionSystem; // 创建碰撞系统
@@ -815,6 +818,20 @@ void main()
                     std::cout << "Transform remains: " << scene.world.HasTransform(removedEntity) << '\n';
                     std::cout << "Velocity remains: " << scene.world.HasVelocity(removedEntity) << '\n';
                     std::cout << "AABB remains: " << scene.world.HasAABB(removedEntity) << '\n';
+                }
+
+                if (actions.loadRequested) {
+                    if (scene.Load(savePath)) {
+                        camera.position = Vec2{};
+                        std::cout << "Loaded: " << savePath << " | Score: " << scene.score << '\n';
+                    }
+                    else {
+                        std::cout << "Load failed: " << savePath << '\n';
+                    }
+                }
+                else if (actions.saveRequested) {
+                    const bool saved = scene.Save(savePath);
+                    std::cout << (saved ? "Saved: " : "Save failed: ") << savePath << '\n';
                 }
 
                 //const Uint8* keyboardState = SDL_GetKeyboardState(nullptr); // 第一行是取得键盘按键状态表的地址 1：这个键正被按住 0：这个键没有被按住

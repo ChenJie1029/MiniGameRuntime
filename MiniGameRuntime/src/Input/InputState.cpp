@@ -65,6 +65,12 @@ InputActions ReadInputActions() {
 			else if (event.key.keysym.sym == SDLK_p) {
 				actions.pauseRequested = true;
 			}
+			else if (event.key.keysym.sym == SDLK_F5) {
+				actions.saveRequested = true;
+			}
+			else if (event.key.keysym.sym == SDLK_F9) {
+				actions.loadRequested = true;
+			}
 		}
 	}
 

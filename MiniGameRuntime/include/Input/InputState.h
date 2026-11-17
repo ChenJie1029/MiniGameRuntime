@@ -14,6 +14,9 @@ struct InputActions { // 每个布尔值表示本帧是否发生了这个动作
 	bool resetRequested = false;
 	bool deletePlayerRequested = false;
 	bool pauseRequested = false;
+
+	bool saveRequested = false;
+	bool loadRequested = false;
 };
 
 InputActions ReadInputActions();
