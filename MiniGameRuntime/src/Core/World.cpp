@@ -1,4 +1,5 @@
 #include <stdexcept> //引入标准异常，用于处理非法查询
+#include <algorithm>
 
 #include "Core/World.h"
 
@@ -11,6 +12,15 @@ void World::DestroyEntity(Entity entity) {
 	m_transformComponents.erase(entity); //如果这个实体被毁灭了，它在位置账本里的数据也必须一并注销
 	m_velocityComponents.erase(entity);
 	m_aabbComponents.erase(entity);
+	m_spriteComponents.erase(entity);
+}
+
+void World::Clear() {
+	m_entityManager.Clear();
+	m_transformComponents.clear();
+	m_velocityComponents.clear();
+	m_aabbComponents.clear();
+	m_spriteComponents.clear();
 }
 
 void World::AddTransform(Entity entity, const TransformComponent& component) {
@@ -69,19 +79,53 @@ bool World::HasAABB(Entity entity) const {
 	return m_aabbComponents.find(entity) != m_aabbComponents.end();
 }
 
-void World::Update(float deltaTime) {
-	// 遍历位置账本中的每一个实体
-	for (auto& pair : m_transformComponents) {
-		Entity entity = pair.first;
+//void World::Update(float deltaTime) {
+//	// 遍历位置账本中的每一个实体
+//	for (auto& pair : m_transformComponents) {
+//		Entity entity = pair.first;
+//
+//		//安全检查，要求实体同时拥有速度属性
+//		if (HasVelocity(entity)) {
+//			TransformComponent& trans = pair.second;
+//			const VelocityComponent& vel = m_velocityComponents[entity];
+//
+//			// 位置 = 位置 + 速度 * 时间
+//			trans.position.x += vel.velocity.x * deltaTime;
+//			trans.position.y += vel.velocity.y * deltaTime;
+//		}
+//	}
+//}
 
-		//安全检查，要求实体同时拥有速度属性
-		if (HasVelocity(entity)) {
-			TransformComponent& trans = pair.second;
-			const VelocityComponent& vel = m_velocityComponents[entity];
+void World::AddSprite(Entity entity, const SpriteComponent& component) {
+	if (!m_entityManager.IsAlive(entity)) {
+		return;
+	}
 
-			// 位置 = 位置 + 速度 * 时间
-			trans.position.x += vel.velocity.x * deltaTime;
-			trans.position.y += vel.velocity.y * deltaTime;
+	m_spriteComponents[entity] = component;
+}
+
+const SpriteComponent& World::GetSprite(Entity entity) const {
+	auto it = m_spriteComponents.find(entity);
+	if (it == m_spriteComponents.end()) {
+		throw std::runtime_error("[ECS Error] Entity does not have a SpriteComponent!");
+	}
+	return it->second;
+}
+
+bool World::HasSprite(Entity entity) const {
+	return m_spriteComponents.find(entity) != m_spriteComponents.end();
+}
+
+std::vector<Entity> World::GetDrawableEntities() const {
+	std::vector<Entity> entities; // 创建一个空列表，收集这次查询找到的编号
+
+	for (const auto& entry : m_spriteComponents) {
+		const Entity entity = entry.first;
+		if (HasTransform(entity)) {
+			entities.push_back(entity);
 		}
 	}
+
+	std::sort(entities.begin(), entities.end());
+	return entities;
 }

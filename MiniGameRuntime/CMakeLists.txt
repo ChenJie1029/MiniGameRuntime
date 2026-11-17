@@ -1,7 +1,7 @@
 # ============================================
 # 1. 指定 CMake 最低版本
 # ============================================
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.20)
 
 # ============================================
 # 2. 定义项目名称
@@ -28,14 +28,36 @@ add_executable(MiniGameRuntime
     src/Core/World.cpp 
     src/Systems/CollisionSystem.cpp 
     src/Gameplay/CharacterStateMachine.cpp
-    src/Core/EventBus.cpp  "src/demos/LifetimeDemo.cpp" "include/Core/ObjectPool.h" "include/Core/Timer.h" "src/Core/Timer.cpp" "src/Benchmark/BenchmarkEntity.h" "src/Benchmark/MovementBenchmark.h" "src/Benchmark/CollisionBenchmark.h")
+    src/Core/EventBus.cpp  
+    src/Core/Scene.cpp
+    src/Systems/MovementSystem.cpp
+    src/Input/InputState.cpp
+    src/Systems/PlayerControlSystem.cpp
+    src/Resources/Texture2D.cpp
+    src/Resources/ShaderProgram.cpp
+    "src/demos/LifetimeDemo.cpp" 
+    "include/Core/ObjectPool.h" 
+    "include/Core/Timer.h" 
+    "src/Core/Timer.cpp" 
+    "src/Benchmark/BenchmarkEntity.h" 
+    "src/Benchmark/MovementBenchmark.h" "src/Benchmark/CollisionBenchmark.h" "include/Systems/MovementSystem.h" "src/Systems/MovementSystem.cpp" "include/Components/SpriteComponent.h" "include/Input/InputState.h" "src/Input/InputState.cpp" "include/Systems/PlayerControlSystem.h" "src/Systems/PlayerControlSystem.cpp" "include/Resources/Texture2D.h" "src/Resources/Texture2D.cpp" "include/Resources/ShaderProgram.h" "src/Resources/ShaderProgram.cpp")
+
+    target_compile_definitions(
+        MiniGameRuntime
+        PRIVATE
+        MGR_ASSET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets/"
+)
 
 # ============================================
 # 5. 指定头文件搜索路径
 # ============================================
 target_include_directories(MiniGameRuntime PRIVATE 
-    ${CMAKE_CURRENT_SOURCE_DIR}        # 根目录（找 MiniGameRuntime.h）
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${sdl2_SOURCE_DIR}/include
+
+    # GLAD 生成的头文件目录，主要用于让 IntelliSense 正确识别
+    ${CMAKE_BINARY_DIR}/gladsources/glad_gl_core_33/include
 )
 
 # ============================================
@@ -50,3 +72,24 @@ set_target_properties(MiniGameRuntime PROPERTIES
 # ============================================
 message(STATUS "Building ${PROJECT_NAME} with C++${CMAKE_CXX_STANDARD}")
 message(STATUS "Source files: MiniGameRuntime.cpp, src/main.cpp, src/Vec2.cpp")
+
+target_link_libraries(
+    MiniGameRuntime
+    PRIVATE
+    SDL2::SDL2-static
+    OpenGL::GL
+    glad_gl_core_33
+)
+
+add_dependencies(
+    MiniGameRuntime
+    glad_gl_core_33
+)
+
+if(TARGET SDL2::SDL2main)
+    target_link_libraries(
+        MiniGameRuntime
+        PRIVATE
+        SDL2::SDL2main
+    )
+endif()

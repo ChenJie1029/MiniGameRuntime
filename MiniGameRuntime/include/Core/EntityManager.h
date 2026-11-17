@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <cstddef>
 #include "Common/Entity.h"
 
 class EntityManager {
@@ -11,9 +12,11 @@ public:
 
 	bool IsAlive(Entity entity) const; //查询实体是否存活
 
-	void DestroyEntity(Entity entity); //删除指定的实体
+	bool DestroyEntity(Entity entity); //删除指定的实体
 
-	size_t GetEntityCount() const; //查询当前存活的实体数量
+	void Clear();
+
+	std::size_t GetEntityCount() const; //查询当前存活的实体数量
 
 private:
 	Entity m_nextEntityID; //记录下一个可用的 ID

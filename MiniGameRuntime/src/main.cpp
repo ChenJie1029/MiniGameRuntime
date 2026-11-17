@@ -1,383 +1,1004 @@
 #include <iostream>
-#include <iomanip>
+#include <cmath>
+#include <string>
+#include <vector>
+#include <cstddef>
+#include <filesystem>
+#include <format>
+
+#include <glad/gl.h>
+#include <SDL.h>
+
 #include "Math/Vec2.h"
-#include "Components/TransformComponent.h"
-#include "Components/VelocityComponent.h"
-#include "Core/EntityManager.h"
+
 #include "Core/World.h"
-#include "Physics/PhysicsUtils.h"
+#include "Common/Entity.h"
+#include "Components/TransformComponent.h"
+#include "Components/SpriteComponent.h"
+
+#include "Components/VelocityComponent.h"
 #include "Systems/CollisionSystem.h"
-#include "Gameplay/CharacterStateMachine.h"
-#include "Core/EventBus.h"
-#include "Core/ObjectPool.h"
-#include "Core/Timer.h"
-#include "src/Benchmark/MovementBenchmark.h"
 
-// ===========================================================9 编写一个具体的业务对象：子弹
-//class Bullet : public Hazel::IPoolable {
-//public:
-//    float x = 0.0f;
-//    float y = 0.0f;
-//    bool active = false;
-//
-//    // 唤醒逻辑
-//    void Init() override {
-//        x = 0.0f;
-//        y = 0.0f;
-//        active = true;
-//        std::cout << "  [Bullet] 子弹激活：坐标归零 (" << x << ", " << y << ")\n";
-//    }
-//
-//    // 归还逻辑
-//    void Reset() override {
-//        active = false;
-//        std::cout << "  [Bullet] 子弹进入休眠状态\n";
-//    }
-//};
+#include "Core/Scene.h"
 
-// ===========================================================10 Timer.h测试
-class Bullet : public Hazel::IPoolable {
-public:
-    float x = 0, y = 0;
-    void Init() override{}
-    void Reset() override{}
+#include "Systems/MovementSystem.h"
+#include "Input/InputState.h"
+
+#include "Systems/PlayerControlSystem.h"
+#include "Resources/Texture2D.h"
+
+#include "Resources/ShaderProgram.h"
+
+constexpr int WINDOW_WIDTH = 800;
+constexpr int WINDOW_HEIGHT = 600;
+
+struct Mat4 {
+    float values[16];
 };
 
-int main() {
-    std::cout << "MiniGameRuntime started." << std::endl;
+struct Sprite {
+    Vec2 position;
+    Vec2 scale;
+    float rotationRadians;
+    GLuint textureId;
+};
 
-    //调用带参构造函数创建a, b
-    Vec2 a(1.0f, 2.0f);
-    Vec2 b(3.0f, 4.0f);
+struct Camera2D {
+    Vec2 position;
+};
 
-    //调用带参构造函数创建c, 但是c又调用了成员方法
-    Vec2 c = a + b;
-    Vec2 d = a - b;
-    Vec2 e = a * 2.5f;
-    Vec2 g = a + b * 3.5f;
+struct Renderer { // 定义一个Renderer数据类型
+    GLuint shaderProgram; // 保存当前使用的Shader Program编号
+    GLuint modelMatrixLocation; // 保存Shader中 modelMatrix的Uniform位置
+    GLuint viewMatrixLocation; // 保存Shader中 viewMatrix的Uniform位置
+    GLuint vertexArrayObject; // 保存矩形VAO的编号 Renderer通过它知道如何读取顶点数据
+    GLsizei indexCount; // 保存EBO中需要读取的索引数量 当前矩形有6个索引
+};
 
-    std::cout << "c.x:" << c.x << " " << "c.y:" << c.y << std::endl;
-    std::cout << "d.x:" << d.x << " " << "d.y:" << d.y << std::endl;
-    std::cout << "e.x:" << e.x << " " << "e.y:" << e.y << std::endl;
-    std::cout << "g.x:" << g.x << " " << "g.y:" << g.y << std::endl;
+Mat4 CreateModelMatrix(float positionX, float positionY, float rotationRadians, float scaleX, float scaleY)
+{ // 控制X平移  控制Y平移  控制旋转  控制X缩放  控制Y缩放
+    float cosine = std::cos(rotationRadians); // 进一步控制旋转
+    float sine = std::sin(rotationRadians);
 
-    //===========================================================
-    //实现对象可以根据速度变更位置
-    TransformComponent transform(Vec2(0.0f, 0.0f));
-    VelocityComponent Velocity(Vec2(1.0f, 2.0f));
+    Mat4 matrix{
+        {
+            cosine * scaleX,
+            sine * scaleX,
+            0.0f,
+            0.0f,
 
-    float deltaTime = 0.016f;
-    transform.position = transform.position + Velocity.velocity * deltaTime;
+            -sine * scaleY,
+            cosine * scaleY,
+            0.0f,
+            0.0f,
 
-    std::cout << "X:" << transform.position.x << " " << "Y:" << transform.position.y << std::endl;
+            0.0f,
+            0.0f,
+            1.0f,
+            0.0f,
 
-    //===========================================================
-    std::cout << "===========================================================" << std::endl;
-    //创建实体 
-    EntityManager entityManager; //实例化我们的户籍管理局（EntityManager）
+            positionX,
+            positionY,
+            0.0f,
+            1.0f
+        }
+    };
 
-    Entity player = entityManager.CreateEntity(); //创建实体
-    Entity enemy1 = entityManager.CreateEntity();
-    Entity enemy2 = entityManager.CreateEntity();
+    return matrix;
+}
 
-    // 打印它们各自拿到的唯一 ID 编号
-    std::cout << "Player Entity ID: " << player << std::endl;
-    std::cout << "Enemy1 Entity ID: " << enemy1 << std::endl;
-    std::cout << "Enemy2 Entity ID: " << enemy2 << std::endl;
+void BeginScene(const Renderer& renderer, const Mat4& viewMatrix) {
+    glUseProgram(renderer.shaderProgram);
 
-    //输出当前存活的数量
-    std::cout << "Living entity count =" << entityManager.GetEntityCount() << std::endl;
-
-    //检查 enemy1 当前是否活着
-    std::cout << "Enemy1 is alive? " << (entityManager.IsAlive(enemy1) ? "Yes" : "No") << std::endl;
-
-    //干掉 enemy1
-    std::cout << "Destroying Enemy1..." << std::endl;
-    entityManager.DestroyEntity(enemy1);
-
-    // 再次检查数量和存活状态
-    std::cout << "Living entity count = " << entityManager.GetEntityCount() << std::endl;
-    std::cout << "Enemy1 is alive now? " << (entityManager.IsAlive(enemy1) ? "Yes" : "No") << std::endl;
-    std::cout << "Player is alive now? " << (entityManager.IsAlive(player) ? "Yes" : "No") << std::endl;
-
-    //创建1000个Entity
-    for (int i = 0; i < 1000; i++) {
-        entityManager.CreateEntity();
-    }
-
-    std::cout << "一共有" << entityManager.GetEntityCount() << "个角色" << std::endl;
-
-    //===========================================================
-    std::cout << "===========================================================" << std::endl;
-    std::cout << "--- 触发安全边界测试 ---" << std::endl;
-    entityManager.DestroyEntity(INVALID_ENTITY); //删除无效实体
-    entityManager.DestroyEntity(player); //正常删除
-    entityManager.DestroyEntity(player); //重复删除
-    entityManager.DestroyEntity(9999); //删除一个根本不存在的野数字
-
-    //===========================================================
-    std::cout << "===========================================================" << std::endl;
-    std::cout << "--- World类测试 ---" << std::endl;
-    World world;
-
-    // 用world类创建实体
-    Entity player2 = world.CreateEntity();
-    std::cout << "Created Player Entity with ID: " << player << std::endl;
-
-    // 初始位置定在 (10.0, 20.0)
-    TransformComponent initialTransform(Vec2(10.0f, 20.0f));
-
-    // 通过 World 将实体和位置组件关联
-    world.AddTransform(player2, initialTransform);
-    std::cout << "Successfully added TransformComponent to Player." << std::endl;
-
-    // 现场创建 initialVelocity 结构体，并塞进速度账本
-    VelocityComponent initialVelocity(Vec2(5.0f, -2.0f));
-    world.AddVelocity(player2, initialVelocity);
-
-    // 获取并打印当前位置
-    TransformComponent& playerTransform = world.GetTransform(player2);
-    std::cout << "Player current pos: (" << playerTransform.position.x
-        << ", " << playerTransform.position.y << ")" << std::endl;
-
-    // 获取并打印当前速度
-    VelocityComponent& playerVelocity = world.GetVelocity(player2);
-    std::cout << "Player current velocity: (" << playerVelocity.velocity.x
-        << ", " << playerVelocity.velocity.y << ")" << std::endl;
-
-    // 尝试在外部直接修改它的位置数据
-    playerTransform.position.x = 55.5f;
-    playerTransform.position.y = 88.8f;
-
-    // 再次从世界中获取，验证账本里的是否也跟着变了
-    TransformComponent& updatedTransform = world.GetTransform(player2);
-    std::cout << "Player updated pos: (" << updatedTransform.position.x
-        << ", " << updatedTransform.position.y << ")" << std::endl;
-
-    //创建100个带 Transform 和 Velocity 的实体
-    /*for (int i = 0; i < 100; i++) {
-        Entity entity = world.CreateEntity();
-        world.AddTransform(entity, TransformComponent(Vec2(float(i), 0.0f)));
-        world.AddVelocity(entity, VelocityComponent(Vec2(1.0f, 2.0f)));
-    }*/
-
-    //===========================================================
-    std::cout << "===========================================================" << std::endl;
-    std::cout << "--- Game Loop & World Update Simulation ---" << std::endl;
-    Entity player3 = world.CreateEntity();
-    world.AddTransform(player3, TransformComponent(Vec2(0.0f, 0.0f)));
-    world.AddVelocity(player3, VelocityComponent(Vec2(10.0f, 5.0f)));
-
-    // 模拟游戏主循环(Game Loop)，跑 5 帧
-    // float deltaTime = 0.016f;真实的值
-    deltaTime = 1.0f; // 假设每帧雷打不动过去 1 秒
-
-    for (int frame = 1; frame <= 5; frame++) {
-        world.Update(deltaTime);
-
-        TransformComponent& pTrans = world.GetTransform(player3);
-        std::cout << "[Frame " << frame << "] Player3 Pos: ("
-            << pTrans.position.x << ", " << pTrans.position.y << ")" << std::endl;
-    }
-
-    //===========================================================
-    std::cout << "===========================================================" << std::endl;
-    std::cout << "=== AABB Collision Real-Time Test ===" << std::endl;
-
-    Entity player4 = world.CreateEntity();
-    world.AddTransform(player4, TransformComponent(Vec2(0.0f, 0.0f)));
-    world.AddAABB(player4, AABBComponent(32.0f, 32.0f));
-
-    Entity enemy4 = world.CreateEntity();
-    world.AddTransform(enemy4, TransformComponent(Vec2(100.0f, 100.0f)));
-    world.AddAABB(enemy4, AABBComponent(32.0f, 32.0f));
-    // ==========================================
-    // 场景一测试：相隔很远
-    // ==========================================
-    std::cout << "\n--- Test 1: Entities are far apart ---" << std::endl;
-    // 顺着网线取出各自的位置和碰撞大小
-    TransformComponent& pTrans = world.GetTransform(player4);
-    AABBComponent& pAABB = world.GetAABB(player4);
-
-    TransformComponent& eTrans = world.GetTransform(enemy4);
-    AABBComponent& eAABB = world.GetAABB(enemy4);
-
-    bool isColliding1 = PhysicsUtils::CheckAABBCollision(
-        pTrans.position, pAABB.halfExtents,
-        eTrans.position, eAABB.halfExtents
+    glUniformMatrix4fv(
+        renderer.viewMatrixLocation,
+        1,
+        GL_FALSE,
+        viewMatrix.values
     );
 
-    std::cout << "Collision Status: " << (isColliding1 ? "💥 碰到!" : "🟢 没碰到") << std::endl;
+    glActiveTexture(GL_TEXTURE0);
 
-    // 场景二测试：相隔很近
-    // ==========================================
-    std::cout << "\n--- Test 2: Entities are far apart ---" << std::endl;
-    eTrans.position = Vec2(10.0f, 10.0f);
-    bool isColliding2 = PhysicsUtils::CheckAABBCollision(
-        pTrans.position, pAABB.halfExtents,
-        eTrans.position, eAABB.halfExtents
+    glBindVertexArray(renderer.vertexArrayObject);
+}
+
+void DrawSprite(
+    const Renderer& renderer,
+    const Sprite& sprite
+) {
+    Mat4 modelMatrix = CreateModelMatrix( // 创建模型矩阵
+        sprite.position.x,
+        sprite.position.y,
+        sprite.rotationRadians,
+        sprite.scale.x,
+        sprite.scale.y
     );
-    std::cout << "Collision Status: " << (isColliding2 ? "💥 碰到!" : "🟢 没碰到") << std::endl;
 
-    //===========================================================5
-    std::cout << "===========================================================" << std::endl;
-    std::cout << "=== CollisionSystem Automated Batch Test ===" << std::endl;
+    glUniformMatrix4fv( // 发送模型矩阵
+        renderer.modelMatrixLocation,
+        1,
+        GL_FALSE,
+        modelMatrix.values
+    );
 
-    Entity player5 = world.CreateEntity();
-    world.AddTransform(player5, TransformComponent(Vec2(0.0f, 0.0f)));
-    world.AddAABB(player5, AABBComponent(32.0f, 32.0f));
+    glBindTexture( // 绑定纹理
+        GL_TEXTURE_2D,
+        sprite.textureId
+    );
 
-    Entity enemy5 = world.CreateEntity();
-    world.AddTransform(enemy5, TransformComponent(Vec2(10.0f, 10.0f)));
-    world.AddAABB(enemy5, AABBComponent(32.0f, 32.0f));
+    glDrawElements( // 绘制
+        GL_TRIANGLES,
+        renderer.indexCount,
+        GL_UNSIGNED_INT,
+        nullptr
+    );
+}
 
-    Entity enemy6 = world.CreateEntity();
-    world.AddTransform(enemy6, TransformComponent(Vec2(100.0f, 100.0f)));
-    world.AddAABB(enemy6, AABBComponent(32.0f, 32.0f));
-
-    Entity wall = world.CreateEntity();
-    world.AddTransform(wall, TransformComponent(Vec2(0.0f, 20.0f)));
-    world.AddAABB(wall, AABBComponent(64.0f, 16.0f));
-
-    std::cout << "-> All 4 entities spawned and registered in World ledger." << std::endl;
-    std::cout << "\n--- CollisionSystem Scanning Start ---" << std::endl;
-
-    CollisionSystem collisionSystem;
-    collisionSystem.Update(world);
-
-    std::cout << "--- 🔍 Scan Finished ---" << std::endl;
-
-    //===========================================================7
-    std::cout << "===========================================================" << std::endl;
-    std::cout << "=== Character State Machine Real-Time Test ===" << std::endl;
-
-    Entity player7 = world.CreateEntity();
-    std::cout << "-> Player Entity [" << player7 << "] created." << std::endl;
-
-    // 实例化玩家的状态机大管家
-    CharacterStateMachine playerFSM;
-
-    playerFSM.ChangeState(player7, std::make_shared<IdleState>());
-
-    // float deltaTime = 0.016f;
-    for (int frame = 1; frame <= 3; frame++) {
-        std::cout << "[Frame " << frame << "]" << std::endl;
-        playerFSM.Update(player7, deltaTime);
+void DrawEntity(const Renderer& renderer, World& world, Entity entity, GLuint textureId) { // World到Sprite的转换函数   
+    // 提供绘制需要的Shader、Uniform、VAO和索引数量   提供实体的组件数据   指定要绘制哪个Entity ID   指定该实体使用哪张OpenGL纹理
+    if (!world.HasTransform(entity) || !world.HasSprite(entity)) { // 位置和边界信息
+        return;
     }
 
-    // 让玩家再次切换状态（触发 Exit -> Enter 的完整交接）
-    std::cout << "\n--- State Transition Test ---" << std::endl;
-    // 为了看到效果，我们让他重新切一次 IdleState（或者下周切 MoveState）
-    // 观察它会不会先触发老状态的 Exit，再触发新状态的 Enter
-    playerFSM.ChangeState(player7, std::make_shared<IdleState>());
+    const TransformComponent& transform = world.GetTransform(entity); // 根据Entity ID从World中取得位置组件
+    const SpriteComponent& spriteComponent = world.GetSprite(entity);
 
-    std::cout << "\n=== Test Finished ===" << std::endl;
+    //const AABBComponent& aabb = world.GetAABB(entity);// 根据Entity ID取得AABB组件
 
-    //===========================================================8
-    std::cout << "===========================================================" << std::endl;
-    std::cout << "=== Engine Integration: EventBus & StateMachine Test ===" << std::endl;
-    Entity player8 = world.CreateEntity();
-    Entity monster8 = world.CreateEntity();
-    std::cout << "-> Created Player8 [" << player8 << "] and Monster8 [" << monster8 << "].\n" << std::endl;
+    const Sprite sprite{ // 创建临时Sprite
+        transform.position, // Sprite位置直接来自Transform
+        spriteComponent.drawScale,
+        0.0f, // 没有旋转
+        textureId // 让这个临时Sprite使用传进来的纹理
+    };
 
-    // CharacterStateMachine playerFSM;  实例化玩家的状态机大管家
+    DrawSprite(renderer, sprite); // 绘制函数
+}
 
-    // 让大管家去电报局登记自己的门牌号！
-    EventBus::Subscribe(&playerFSM); // 因为大管家继承了 ICollisionListener，所以传入 &playerFSM（它的地址）是完全合法的
-    std::cout << "[System] PlayerFSM subscribed to EventBus." << std::endl;
+void EndScene() {
+    glBindVertexArray(0); // 解除当前VAO绑定
+    glUseProgram(0);
+}
 
-    // 开局让玩家进入 IdleState（站立发呆）
-    std::cout << "\n--- Game Start: Setting Player to IDLE ---" << std::endl;
-    playerFSM.ChangeState(player8, std::make_shared<IdleState>());
+// 添加Shader编译检查函数
+//bool CheckShaderCompilation(GLuint shader, const char* shaderName) { // 接收需要检查的Shader编号   接收用于输出的名称，例如 "Vertex"或 "Fragment"
+//    GLint compilationSucceeded = GL_FALSE; // 先准备一个变量，初始表示编译失败
+//
+//    glGetShaderiv( // 查询shader  查询内容是编译状态  把结果写进compilationSucceeded
+//        shader,
+//        GL_COMPILE_STATUS,
+//        &compilationSucceeded
+//    );
+//
+//    if (compilationSucceeded == GL_TRUE) {
+//        return true;
+//    }
+//
+//    char errorMessage[1024]{}; // 准备一个能保存1024个字符的C风格字符数组，并初始化为空
+//
+//    glGetShaderInfoLog( // 从Shader中取得编译器错误日志，写入 errorMessage
+//        shader,
+//        static_cast<GLsizei>(sizeof(errorMessage)),
+//        nullptr,
+//        errorMessage
+//    );
+//
+//    std::cout
+//        << shaderName
+//        << " shader compilation failed:"
+//        << std::endl
+//        << errorMessage
+//        << std::endl;
+//
+//    return false;
+//}
 
-    // 模拟第一帧：玩家安全，一切平静
-    std::cout << "\n--- Frame 1: Safe and Peaceful ---" << std::endl;
-    playerFSM.Update(player8, 0.016f);
+// 添加Shader Program链接检查
+//bool CheckProgramLinking(GLuint shaderProgram) {
+//    GLint linkingSucceeded = GL_FALSE;
+//
+//    glGetProgramiv(
+//        shaderProgram,
+//        GL_LINK_STATUS,
+//        &linkingSucceeded
+//    );
+//
+//    if (linkingSucceeded == GL_TRUE) {
+//        return true;
+//    }
+//
+//    char errorMessage[1024]{};
+//
+//    glGetProgramInfoLog(
+//        shaderProgram,
+//        static_cast<GLsizei>(sizeof(errorMessage)),
+//        nullptr,
+//        errorMessage
+//    );
+//
+//    std::cout
+//        << "Shader program linking failed:"
+//        << std::endl
+//        << errorMessage
+//        << std::endl;
+//
+//    return false;
+//}
 
-    // 模拟第二帧：物理系统突然检测到了碰撞！
-    std::cout << "\n--- Frame 2: Danger! Collision Happens! ---" << std::endl;
-    // CollisionSystem collisionSystem;  之前已经定义过了
-    // 驱动物理系统。物理系统内部会检测到碰撞，现场写电报，并通过 EventBus.Publish 广播出去
-    collisionSystem.Update(world);
+int main(int argc, char* argv[])
+{
+    // ----------添加顶点着色器----------
+const char* vertexShaderSource = R"glsl(
+#version 330 core
 
-    std::cout << "\n=== Test Finished ===" << std::endl;
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec3 color;
+layout(location = 2) in vec2 textureCoordinate;
 
-    //===========================================================9
-    std::cout << "===  Hazel 游戏引擎：对象池测试 ===\n\n";
+uniform mat4 modelMatrix;
+uniform mat4 viewMatrix;
 
-    // 创建一个容量为 3 的子弹池（堆内存预分配 3 个 Bullet）
-    Hazel::ObjectPool<Bullet> bulletPool(3);
+out vec3 vertexColor;
+out vec2 textureUV;
 
-    std::cout << "\n--- 1. 借出子弹 ---\n";
-    Bullet* b1 = bulletPool.Acquire();
-    Bullet* b2 = bulletPool.Acquire();
+void main()
+{
+    gl_Position = viewMatrix * modelMatrix * vec4(position, 1.0);
 
-    std::cout << "\n--- 2. 修改子弹数据 ---\n";
-    b1->x = 100.0f;
-    b1->y = 200.0f;
-    std::cout << "  b1 当前坐标: (" << b1->x << ", " << b1->y << ")\n";
+    vertexColor = color;
+    textureUV = textureCoordinate;
+}
+)glsl";
+    // #version 330 core   使用GLSL 3.30核心模式，与OpenGL 3.3对应
+    // layout(location = 0) in vec3 position;   从VAO的属性位置0读取三个数 x、y、z
+    // gl_Position = vec4(position, 1.0);   将输入位置设置为顶点最终位置  gl_Position 要求四个分量x、y、z、w  所以将vec3转换成vec4(position, 1.0)
 
-    std::cout << "\n--- 3. 归还子弹b1 ---\n";
-    bulletPool.Release(b1);
+    // ----------添加片段着色器----------
+const char* fragmentShaderSource = R"glsl(
+#version 330 core
 
-    std::cout << "\n--- 4. 再次借出子弹（验证内存复用与 Init 重置）---\n";
-    Bullet* b3 = bulletPool.Acquire(); // b3 复用的就是刚刚归还的 b1 的内存
-    std::cout << "  b3 坐标（应该被 Init 重置为 0）: (" << b3->x << ", " << b3->y << ")\n";
+in vec3 vertexColor;
+in vec2 textureUV;
 
-    std::cout << "\n=== 测试完成，准备退出 ===\n";
+uniform sampler2D objectTexture;
 
-    //===========================================================10
-    std::cout << "===  Hazel 游戏引擎：Timer测试 ===\n\n";
-    constexpr int TEST_COUNT = 100000;
+out vec4 fragmentColor;
 
-    // 1. 测试普通 new/delete 的耗时
-    {
-        Hazel::Timer timer;
-        for (int i = 0; i < TEST_COUNT; ++i) {
-            Bullet* b = new Bullet();
-            delete b; // 每次都向操作系统申请和销毁内存
+void main()
+{
+    fragmentColor = texture(objectTexture, textureUV);
+}
+)glsl";
+    // out vec4 fragmentColor;   声明最终输出颜色
+    // vec4(1.0, 0.5, 0.2, 1.0)  红 = 1.0，绿 = 0.5，蓝 = 0.2，透明度 = 1.0
+    // R"glsl(... )glsl" 是C++原始字符串，使我们可以直接在C++中保存多行着色器代码
+    // fragmentColor = texture(objectTexture, textureUV);  使用当前像素的UV坐标，从 objectTexture 中读取颜色    objectTexture指定从哪张纹理取样   textureUV指定取样位置
+
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        std::cout
+            << "SDL initialization failed: "
+            << SDL_GetError()
+            << std::endl;
+
+        return 1;
+    }
+
+    // 要求SDL创建OpenGL 3.3核心模式上下文
+    SDL_GL_SetAttribute(
+        SDL_GL_CONTEXT_MAJOR_VERSION,
+        3
+    );
+
+    SDL_GL_SetAttribute(
+        SDL_GL_CONTEXT_MINOR_VERSION,
+        3
+    );
+
+    SDL_GL_SetAttribute(
+        SDL_GL_CONTEXT_PROFILE_MASK,
+        SDL_GL_CONTEXT_PROFILE_CORE
+    );
+
+    SDL_GL_SetAttribute(
+        SDL_GL_DOUBLEBUFFER,
+        1
+    );
+
+    SDL_Window* window = SDL_CreateWindow(
+        "MiniGameRuntime - OpenGL",
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED,
+        WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+        SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN // 表示这个窗口将用于 OpenGL 绘制
+    );
+
+    if (window == nullptr) {
+        std::cout
+            << "Window creation failed: "
+            << SDL_GetError()
+            << std::endl;
+
+        SDL_Quit();
+        return 1;
+    }
+
+    SDL_GLContext openGLContext =
+        SDL_GL_CreateContext(window); // OpenGL与当前窗口之间的绘图环境和状态集合 没有 OpenGL 上下文，就不能在这个窗口中执行 OpenGL 绘制
+
+    if (openGLContext == nullptr) {
+        std::cout
+            << "OpenGL context creation failed: "
+            << SDL_GetError()
+            << std::endl;
+
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return 1;
+    }
+
+    // 开启垂直同步
+    if (SDL_GL_SetSwapInterval(1) != 0) {
+        std::cout
+            << "Warning: VSync could not be enabled: "
+            << SDL_GetError()
+            << std::endl;
+    }
+
+    int openGLVersion = gladLoadGL(
+        reinterpret_cast<GLADloadfunc>(
+            SDL_GL_GetProcAddress
+            )
+    );
+
+    if (openGLVersion == 0) { 
+        std::cout
+            << "Failed to initialize GLAD!"
+            << std::endl;
+
+        SDL_GL_DeleteContext(openGLContext);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+
+        return 1;
+    }
+
+    std::cout
+        << "Loaded OpenGL "
+        << GLAD_VERSION_MAJOR(openGLVersion)
+        << "."
+        << GLAD_VERSION_MINOR(openGLVersion)
+        << std::endl;
+
+    //// ----------编译顶点着色器----------
+    //GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER); // 创建顶点着色器对象
+
+    //glShaderSource( // 把源代码交给着色器对象
+    //    vertexShader,
+    //    1,
+    //    &vertexShaderSource,
+    //    nullptr
+    //);
+
+    //glCompileShader(vertexShader); //编译GPU程序 这是编译GLSL着色器，不是编译C++
+
+    //// 检查Shader编译  调用
+    //bool vertexShaderCompiled = CheckShaderCompilation(vertexShader, "Vertex");
+
+    //// ----------编译片段着色器----------
+    //GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+
+    //glShaderSource(
+    //    fragmentShader,
+    //    1,
+    //    &fragmentShaderSource,
+    //    nullptr
+    //);
+
+    //glCompileShader(fragmentShader);
+
+    //// 检查Shader编译  调用
+    //bool fragmentShaderCompiled = CheckShaderCompilation(fragmentShader, "Fragment");
+
+    //if (!vertexShaderCompiled || !fragmentShaderCompiled) {
+    //    glDeleteShader(vertexShader);
+    //    glDeleteShader(fragmentShader);
+
+    //    SDL_GL_DeleteContext(openGLContext);
+    //    SDL_DestroyWindow(window);
+    //    SDL_Quit();
+
+    //    return 1;
+    //}
+
+    //// ----------链接Shader Program----------
+    //GLuint shaderProgram = glCreateProgram(); // 创建着色器程序
+    //glAttachShader(shaderProgram, vertexShader); // 把顶点着色器安装到程序上
+    //glAttachShader(shaderProgram, fragmentShader); // 把片段着色器安装到程序上
+    //glLinkProgram(shaderProgram); // 将它们连接成完整的GPU绘制程序
+
+    //if (!CheckProgramLinking(shaderProgram)) { // 链接失败
+    //    glDeleteShader(vertexShader);
+    //    glDeleteShader(fragmentShader);
+    //    glDeleteProgram(shaderProgram);
+
+    //    SDL_GL_DeleteContext(openGLContext);
+    //    SDL_DestroyWindow(window);
+    //    SDL_Quit();
+
+    //    return 1;
+    //}
+
+    int exitCode = 1;
+
+    if (ShaderProgram shader; shader.Build(vertexShaderSource, fragmentShaderSource)) {
+        const GLuint shaderProgram = shader.GetId();
+
+        // glGetUniformLocation在指定ShaderProgram中查找名为modelMatrix的变量，并返回它的位置编号是modelMatrixLocation类型
+        GLint modelMatrixLocation = glGetUniformLocation(shaderProgram, "modelMatrix");  // 存在于顶点着色器中 uniform mat4 modelMatrix;
+        // 检查是否找到
+        if (modelMatrixLocation == -1) {
+            std::cout << "Failed to find modelMatrix uniform!" << std::endl;
         }
-        std::cout << "[原生 new/delete] 10 万次耗时: " << timer.ElapsedMilliseconds() << " ms\n";
-    }
 
-    // 2. 测试对象池 Acquire/Release 的耗时
-    {
-        Hazel::ObjectPool<Bullet> pool(TEST_COUNT);
-        Hazel::Timer timer;
-        for (int i = 0; i < TEST_COUNT; ++i) {
-            Bullet* b = pool.Acquire();
-            pool.Release(b);
+        GLint viewMatrixLocation = glGetUniformLocation(shaderProgram, "viewMatrix"); // 查找viewMatrix的位置
+        if (viewMatrixLocation == -1) {
+            std::cout
+                << "Failed to find viewMatrix uniform!"
+                << std::endl;
         }
-        std::cout << "[Hazel 对象池] 10 万次耗时: " << timer.ElapsedMilliseconds() << " ms\n";
+
+        // ----------删除单独的着色器对象----------
+        /*glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);*/
+
+        glViewport( // 告诉 OpenGL 最终图像应该输出到窗口中的哪块矩形区域
+            0,
+            0,
+            WINDOW_WIDTH,
+            WINDOW_HEIGHT
+        );
+
+        glEnable(GL_BLEND); // 启用颜色混合，允许当前片元的颜色与画面中已有的背景颜色混合
+
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // 这句规定混合比例(当前片元颜色乘以自己的Alpha, 背景颜色乘以 1−当前片元的Alpha)    最终颜色 = 当前颜色×Alpha + 背景颜色×(1 − Alpha)
+
+        constexpr float rectangleVertices[] = {
+            // 位置：X      Y      Z    颜色：R   G   B   // UV
+            -0.5f, -0.35f, 0.0f, 1.0, 0.0f, 0.0f, 0.0f, 0.0f,  // 0: 左下  红
+            0.5f, -0.35f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // 1: 右下  绿
+            0.5f, 0.35f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,   // 2: 右上  蓝
+            -0.5f, 0.35f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f   // 3: 左上  黄
+        };
+
+        //const std::string texturePath = std::string(MGR_ASSET_DIR) + "test.png"; // 拼接图片路径
+
+        //stbi_set_flip_vertically_on_load(true); // 设置加载选项，接下来读取图片时把像素行上下翻转，让返回数据从图片底部开始排列，方便配合前面使用的 OpenGL 纹理坐标约定
+
+        //// 准备三个变量，供加载函数填写结果
+        //int textureWidth = 0; // 图片宽度
+        //int textureHeight = 0; // 图片高度
+        //int textureChannels = 0; // 原始图片通道数
+
+        //unsigned char* texturePixels = stbi_load( // stbi_load负责读取并解码图片  函数返回像素数据的起始地址，保存到 texturePixels
+        //    texturePath.c_str(), // 提供路径字符串的 const char* 地址
+        //    &textureWidth,
+        //    &textureHeight,
+        //    &textureChannels,
+        //    STBI_rgb_alpha // 要求返回的像素统一使用RGBA四通道格式
+        //);
+
+        //if (texturePixels == nullptr) {
+        //    std::cout
+        //        << "Failed to load texture: "
+        //        << texturePath
+        //        << std::endl;
+
+        //    std::cout
+        //        << "Reason: "
+        //        << stbi_failure_reason()
+        //        << std::endl;
+
+        //    glDeleteProgram(shaderProgram); // 	请求删除之前创建的着色器程序，释放其资源
+
+        //    SDL_GL_DeleteContext(openGLContext);
+        //    SDL_DestroyWindow(window);
+        //    SDL_Quit();
+
+        //    return 1;
+        //}
+
+        //GLuint texture = 0; // 准备一个无符号整数变量texture，用于保存纹理编号
+
+        //glGenTextures(1, &texture); // 申请一个纹理编号，并写入texture
+
+        //glActiveTexture(GL_TEXTURE0); // 选择第0号纹理单元。片段着色器中的 objectTexture之后也会使用0号纹理单元
+
+        //glBindTexture(GL_TEXTURE_2D, texture); // 把这个编号对应的纹理绑定为当前操作的二维纹理。之后针对 GL_TEXTURE_2D 的参数设置和图片上传，就作用于它
+
+        //// 设置纹理的取样规则  设置纹理的边界处理方式：当 UV 超出图片范围时，使用最近的边缘颜色
+        //glTexParameteri(
+        //    GL_TEXTURE_2D,
+        //    GL_TEXTURE_WRAP_S,
+        //    GL_CLAMP_TO_EDGE
+        //);
+
+        //glTexParameteri(
+        //    GL_TEXTURE_2D,
+        //    GL_TEXTURE_WRAP_T,
+        //    GL_CLAMP_TO_EDGE
+        //);
+
+        //glTexParameteri(
+        //    GL_TEXTURE_2D,
+        //    GL_TEXTURE_MIN_FILTER, // 纹理显示得比较小时，怎样取颜色
+        //    GL_LINEAR_MIPMAP_LINEAR 
+        //);
+
+        //glTexParameteri(
+        //    GL_TEXTURE_2D,
+        //    GL_TEXTURE_MAG_FILTER, // 纹理显示得比较大时，怎样取颜色
+        //    GL_LINEAR
+        //);
+
+        //// 上传图片
+        //glTexImage2D(
+        //    GL_TEXTURE_2D, // 操作当前绑定的二维纹理
+        //    0, // 上传到第 0 层：原始图像层
+        //    GL_RGBA, // 纹理内部保存 RGBA 分量
+        //    textureWidth, // 图片实际宽度
+        //    textureHeight, // 图片实际高度
+        //    0, // 边框参数，必须为 0
+        //    GL_RGBA, // 传入像素按 R、G、B、A 排列
+        //    GL_UNSIGNED_BYTE, // 每个分量是一个无符号字节
+        //    texturePixels // 从这个地址读取像素数据
+        //);
+
+        //glGenerateMipmap(GL_TEXTURE_2D); // 为当前二维纹理生成 mipmap，也就是同一张图片的一组逐级缩小版本
+
+        //stbi_image_free(texturePixels); // 释放 stbi_load() 为图片分配的 CPU 内存
+
+        //Texture2D texture;
+
+        //if (!texture.LoadFromFile(texturePath)) {
+        //    glDeleteProgram(shaderProgram);
+        //    SDL_GL_DeleteContext(openGLContext);
+        //    SDL_DestroyWindow(window);
+        //    SDL_Quit();
+        //    return 1;
+        //}
+
+        const std::string texturePath = std::string(MGR_ASSET_DIR) + "test.png";
+
+        if (Texture2D texture; texture.LoadFromFile(texturePath)) {
+
+            // constexpr float moveStep = 0.1f; //定义一个编译时常量 moveStep，值为 0.1f，用于表示每次执行移动更新时增加或减少多少
+            constexpr float moveSpeed = 0.8f;
+            constexpr float rotationSpeed = 1.0f;
+
+            // 创建Camera
+            Camera2D camera{
+                Vec2{0.0f, 0.0f}
+            };
+
+            constexpr float cameraSpeed = 0.6f;
+
+            // 索引数组 索引中的数字表示 使用的是第几个顶点
+            constexpr GLuint rectangleIndices[] = {
+                0, 1, 2, // 第一个三角形
+                0, 2, 3  // 第二个三角形
+            };
+
+            // 计算索引数量 8
+            constexpr GLsizei indexCount = static_cast<GLsizei>(sizeof(rectangleIndices) / sizeof(rectangleIndices[0]));
+
+            constexpr int valuesPerVertex = 8;
+
+            constexpr GLsizei vertexStride = valuesPerVertex * sizeof(float); // 从当前顶点开头到移动到下一个顶点开头需要跨过多少字节
+
+            constexpr GLsizei vertexCount =
+                static_cast<GLsizei>(
+                    sizeof(rectangleVertices) /
+                    sizeof(rectangleVertices[0]) /
+                    valuesPerVertex
+                    );
+
+            GLint textureLocation = glGetUniformLocation(shaderProgram, "objectTexture");
+
+            glUseProgram(shaderProgram);
+            glUniform1i(textureLocation, 0);
+
+            // GLuint：OpenGL 用来表示对象编号的类型
+            GLuint vertexArrayObject = 0; // VAO:记录“顶点数据应该怎样读取”的配置
+            GLuint vertexBufferObject = 0; // VBO:显卡中的一块缓冲区，真正保存顶点数据 
+            GLuint elementBufferObject = 0; // 创建EBO
+
+            // 生成3个OpenGL对象
+            glGenVertexArrays(1, &vertexArrayObject); // VAO顶点数据读取规则
+            glGenBuffers(1, &vertexBufferObject); // 4个顶点的坐标数据
+            glGenBuffers(1, &elementBufferObject); // 组成三角形的顶点编号
+
+            // 绑定并上传数据
+            // 选择VAO
+            glBindVertexArray(vertexArrayObject);
+            // 把顶点坐标上传到VBO
+            glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
+
+            glBufferData(
+                GL_ARRAY_BUFFER, // 操作哪个绑定目标上的缓冲区
+                sizeof(rectangleVertices), // 数据有多少字节
+                rectangleVertices, // 从哪里读取原始数据
+                GL_STATIC_DRAW  // 预计如何使用这些数据
+            );
+
+            glVertexAttribPointer(
+                0,                  // 对应着色器的 location = 0
+                3,                  // X、Y、Z
+                GL_FLOAT,
+                GL_FALSE,
+                vertexStride,
+                nullptr             // 从每个顶点的第0字节开始
+            );
+            glEnableVertexAttribArray(0);
+
+            // 顶点排列方式  告诉VAO如何读取VBO中的坐标
+            glVertexAttribPointer(
+                1, // 顶点属性位置 location = 1
+                3, // 每个位置由x,y,z三个数构成
+                GL_FLOAT, // 每个数都是float
+                GL_FALSE, // 不进行归一化转换
+                vertexStride, // 相邻两个顶点之间的字节距离
+                reinterpret_cast<void*>(3 * sizeof(float))
+            );
+            glEnableVertexAttribArray(1);
+
+            glVertexAttribPointer(
+                2,
+                2,
+                GL_FLOAT,
+                GL_FALSE,
+                vertexStride,
+                reinterpret_cast<void*>(6 * sizeof(float))
+            );
+            glEnableVertexAttribArray(2);
+
+            // 将索引上传到EBO
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferObject); // 将刚才创建的EBO绑定到GL_ELEMENT_ARRAY_BUFFER上
+
+            glBufferData(
+                GL_ELEMENT_ARRAY_BUFFER,
+                sizeof(rectangleIndices),
+                rectangleIndices,
+                GL_STATIC_DRAW
+            );
+
+            // 解除绑定
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindVertexArray(0);
+
+            // 输出对象编号
+            std::cout << "VAO: " << vertexArrayObject << std::endl;
+            std::cout << "VBO: " << vertexBufferObject << std::endl;
+            std::cout << "EBO: " << elementBufferObject << std::endl;
+            std::cout << "Rectangle vertex count: " << vertexCount << std::endl;
+            std::cout << "Index count: " << indexCount << std::endl;
+            std::cout << "Vertex count: " << vertexCount << std::endl;
+
+            std::cout
+                << "Triangle vertex count: "
+                << vertexCount
+                << std::endl;
+
+            Renderer renderer{
+                shaderProgram,
+                modelMatrixLocation,
+                viewMatrixLocation,
+                vertexArrayObject,
+                indexCount
+            };
+
+            //World world; // 创建保存实体和组件的World对象world
+
+            //Entity player = world.CreateEntity(); // 创建玩家ID 类型是Entity
+
+            //world.AddTransform(player, TransformComponent{Vec2{-0.4f, 0.0f}}); // 添加玩家位置
+
+            //world.AddAABB(player, AABBComponent{ 0.2f, 0.2f }); // 添加碰撞体积，半宽高
+
+            //world.AddVelocity(player, VelocityComponent{Vec2{0.0f, 0.0f}}); // 添加速度组件
+
+            //Entity wall = world.CreateEntity();
+
+            //world.AddTransform(wall, TransformComponent{ Vec2{0.5f, 0.0f} });
+
+            //world.AddAABB(wall, AABBComponent{ 0.2f, 0.6f });
+
+            //std::vector<Entity> renderEntities{ // 渲染名单  这个容器只保存需要绘制的Entity ID
+            //    player,
+            //    wall
+            //};
+
+            Scene scene;
+            scene.Initialize();
+
+            const std::filesystem::path savePath = std::filesystem::absolute("scene_save.json");
+
+            PlayerControlSystem playerControlSystem;
+            MovementSystem movementSystem; // 创建移动系统对象
+            CollisionSystem collisionSystem; // 创建碰撞系统
+
+            bool running = true;
+            bool isPaused = false;
+
+            // 添加计时器
+            const Uint64 performanceFrequency = SDL_GetPerformanceFrequency(); // 计时器每秒计数多少次
+            Uint64 previousCounter = SDL_GetPerformanceCounter(); // 取计数器当前的读数，保存到previousCounter，作为之后计算时间差的起点
+
+            Uint64 statsStartCounter = previousCounter; // 保存本轮统计的起点
+            int statsFrameCount = 0; // 记录从该起点开始完成的帧数
+
+            while (running) {
+                Uint64 currentCounter = SDL_GetPerformanceCounter(); // 取计数器当前的度数，保存到currentCounter，用于计算和previousCounter的差值
+                float deltaTime = static_cast<float>(currentCounter - previousCounter) / static_cast<float>(performanceFrequency); // 计数差值 / 计数频率 = 具体经过时间
+
+                previousCounter = currentCounter;
+
+                //SDL_Event event;
+
+                ////while (SDL_PollEvent(&event)) {
+                ////    if (event.type == SDL_QUIT) {
+                ////        running = false;
+                ////    }
+                ////    else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
+                ////        running = false;
+                ////    }
+                ////}
+
+                //while (SDL_PollEvent(&event)) {
+                //    if (event.type == SDL_QUIT) {
+                //        running = false;
+                //    }
+                //    else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
+                //        running = false;
+                //    }
+                //    else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_r && event.key.repeat == 0) {
+                //        Entity oldPlayer = scene.player;
+                //        scene.Reset();
+                //        camera.position = Vec2{ 0.0f, 0.0f };
+
+                //        std::cout << "New player ID: " << scene.player << '\n';
+                //        std::cout << "Render count: " << scene.world.GetDrawableEntities().size() << '\n';
+                //        std::cout << "Old player Transform remains: " << scene.world.HasTransform(oldPlayer) << '\n';
+                //    }
+                //    else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_DELETE) {
+                //        if (scene.player != INVALID_ENTITY) {
+                //            Entity removedEntity = scene.player; // 保存原玩家ID
+                //            scene.DestroyEntity(removedEntity); // 执行销毁
+
+                //            std::cout << "Player ID: " << scene.player << '\n';
+                //            std::cout << "Render count: " << scene.world.GetDrawableEntities().size() << '\n';
+                //            std::cout << "Transform remains: " << scene.world.HasTransform(removedEntity) << '\n';
+                //            std::cout << "Velocity remains: " << scene.world.HasVelocity(removedEntity) << '\n';
+                //            std::cout << "AABB remains: " << scene.world.HasAABB(removedEntity) << '\n';
+                //        }
+                //    }
+                //}
+
+                //if (!running) {
+                //    break;
+                //}
+
+                const InputActions actions = ReadInputActions();
+
+                if (actions.quitRequested) {
+                    running = false;
+                }
+
+                if (!running) {
+                    break;
+                }
+
+                if (actions.pauseRequested) { // 按下P，主循环切换状态
+                    isPaused = !isPaused;
+                    std::cout << (isPaused ? "[Game] Paused\n" : "[Game] Resumed\n");
+                }
+
+                if (actions.resetRequested) {
+                    Entity oldPlayer = scene.player;
+                    scene.Reset();
+                    camera.position = Vec2{ 0.0f, 0.0f };
+
+                    std::cout << "[Scene] Reset | New player ID: " << scene.player
+                        << " | Render count: " << scene.world.GetDrawableEntities().size()
+                        << " | Score: " << scene.score
+                        << " | Old player Transform remains: " << scene.world.HasTransform(oldPlayer)
+                        << '\n';
+                }
+
+                if (actions.deletePlayerRequested && scene.player != INVALID_ENTITY) {
+                    Entity removedEntity = scene.player;
+                    scene.DestroyEntity(removedEntity);
+
+                    std::cout << "[Scene] Player deleted | Player ID: " << scene.player
+                        << " | Render count: " << scene.world.GetDrawableEntities().size()
+                        << " | Transform remains: " << scene.world.HasTransform(removedEntity)
+                        << " | Velocity remains: " << scene.world.HasVelocity(removedEntity)
+                        << " | AABB remains: " << scene.world.HasAABB(removedEntity)
+                        << '\n';
+                }
+
+                if (actions.loadRequested) {
+                    if (scene.Load(savePath)) {
+                        camera.position = Vec2{};
+                        std::cout << "Loaded: " << savePath << " | Score: " << scene.score << '\n';
+                    }
+                    else {
+                        std::cout << "Load failed: " << savePath << '\n';
+                    }
+                }
+                else if (actions.saveRequested) {
+                    const bool saved = scene.Save(savePath);
+                    std::cout << (saved ? "Saved: " : "Save failed: ") << savePath << '\n';
+                }
+
+                //const Uint8* keyboardState = SDL_GetKeyboardState(nullptr); // 第一行是取得键盘按键状态表的地址 1：这个键正被按住 0：这个键没有被按住
+
+                //// 后两行是准备保存当前想移动的方向，初始都为0
+                //float directionX = 0.0f;
+                //float directionY = 0.0f;
+
+                //if (keyboardState[SDL_SCANCODE_W]) {
+                //    directionY += 1.0f;
+                //}
+
+                //if (keyboardState[SDL_SCANCODE_S]) {
+                //    directionY -= 1.0f;
+                //}
+
+                //if (keyboardState[SDL_SCANCODE_A]) {
+                //    directionX -= 1.0f;
+                //}
+
+                //if (keyboardState[SDL_SCANCODE_D]) {
+                //    directionX += 1.0f;
+                //}
+
+                //// 加入归一化操作确保斜向速度和正向速度保持一致
+                //float directionLength = std::sqrt(directionX * directionX + directionY * directionY);
+                //if (directionLength > 0.0f) {
+                //    directionX /= directionLength;
+                //    directionY /= directionLength;
+                //}
+
+                const InputState input = ReadInputState();
+
+                if (!isPaused) {
+                    playerControlSystem.Update(scene.world, scene.player, input.playerDirection, moveSpeed);
+
+                    Vec2 previousPlayerPosition{};
+                    if (scene.world.HasTransform(scene.player)) {
+                        previousPlayerPosition = scene.world.GetTransform(scene.player).position;
+                    }
+
+                    movementSystem.Update(scene.world, deltaTime);
+                    collisionSystem.Update(scene.world);
+
+                    if (collisionSystem.Overlaps(scene.world, scene.player, scene.wall)) {
+                        scene.world.GetTransform(scene.player).position = previousPlayerPosition;
+                    }
+
+                    if (collisionSystem.Overlaps(scene.world, scene.player, scene.collectible)) {
+                        scene.DestroyEntity(scene.collectible);
+                        ++scene.score;
+                        std::cout << "Score: " << scene.score << '\n';
+                    }
+
+                    camera.position.x += input.cameraDirection.x * cameraSpeed * deltaTime;
+                    camera.position.y += input.cameraDirection.y * cameraSpeed * deltaTime;
+                }
+
+                //VelocityComponent& playerVelocity = world.GetVelocity(player); // 声明一个Velocity组件引用  用输入修改速度
+                //playerVelocity.velocity.x = directionX * moveSpeed; // 这里只计算速度不计算位移，所以不 *deltaTime
+                //playerVelocity.velocity.y = directionY * moveSpeed;
+
+                //world.Update(deltaTime); // *deltaTime用来更新位移
+                //collisionSystem.Update(world); // 用来计算所有的物体碰撞
+
+                //if (scene.world.HasVelocity(scene.player)) {
+                //    VelocityComponent& playerVelocity = scene.world.GetVelocity(scene.player);
+                //    playerVelocity.velocity.x = directionX * moveSpeed;
+                //    playerVelocity.velocity.y = directionY * moveSpeed;
+                //}
+
+                //if (scene.world.HasVelocity(scene.player)) {
+                //    VelocityComponent& playerVelocity = scene.world.GetVelocity(scene.player);
+                //    playerVelocity.velocity = input.playerDirection * moveSpeed;
+                //}
+
+                //Mat4 modelMatrix = CreateModelMatrix(playerSprite.position.x, playerSprite.position.y, playerSprite.rotationRadians, playerSprite.scale.x, playerSprite.scale.y);
+
+                Mat4 viewMatrix = CreateModelMatrix(-camera.position.x, -camera.position.y, 0.0f, 1.0f, 1.0f);
+
+                // 移动摄像头视角
+                //if (keyboardState[SDL_SCANCODE_UP]) {
+                //    camera.position.y += cameraSpeed * deltaTime;
+                //}
+
+                //if (keyboardState[SDL_SCANCODE_DOWN]) {
+                //    camera.position.y -= cameraSpeed * deltaTime;
+                //}
+
+                //if (keyboardState[SDL_SCANCODE_LEFT]) {
+                //    camera.position.x -= cameraSpeed * deltaTime;
+                //}
+
+                //if (keyboardState[SDL_SCANCODE_RIGHT]) {
+                //    camera.position.x += cameraSpeed * deltaTime;
+                //}
+
+                //camera.position.x += input.cameraDirection.x * cameraSpeed * deltaTime;
+                //camera.position.y += input.cameraDirection.y * cameraSpeed * deltaTime;
+
+                // 指定OpenGL清屏颜色 OpenGL颜色范围是：0.0 ～ 1.0  红、绿、蓝、透明度
+                glClearColor(
+                    0.12f,
+                    0.12f,
+                    0.18f,
+                    1.0f
+                );
+
+                // 清除颜色缓冲区
+                glClear(GL_COLOR_BUFFER_BIT);
+
+                BeginScene(renderer, viewMatrix); // 选择Shader、发送Camera矩阵、选择纹理单元并绑定VAO
+
+                //for (Entity entity : renderEntities) { // 依次取出需要绘制的Entity ID
+                //    DrawEntity(renderer, world, entity, texture);
+                //}
+
+                for (Entity entity : scene.world.GetDrawableEntities()) { // 依次取出需要绘制的Entity ID
+                    DrawEntity(renderer, scene.world, entity, texture.GetId());
+                }
+
+                EndScene();
+
+                // 将OpenGL绘制结果显示到窗口
+                SDL_GL_SwapWindow(window);
+
+                ++statsFrameCount;
+                const Uint64 statsNow = SDL_GetPerformanceCounter();
+                const double elapsedSeconds =
+                    static_cast<double>(statsNow - statsStartCounter) /
+                    static_cast<double>(performanceFrequency);
+
+                if (elapsedSeconds >= 1.0) {
+                    const double fps = statsFrameCount / elapsedSeconds;
+                    const double averageFrameMs = elapsedSeconds * 1000.0 / statsFrameCount;
+
+                    const std::string title = std::format(
+                        "MiniGameRuntime v2 | FPS {:.1f} | Avg {:.2f} ms | Score {} | {}",
+                        fps, averageFrameMs, scene.score, isPaused ? "Paused" : "Running");
+                    SDL_SetWindowTitle(window, title.c_str());
+
+                    statsStartCounter = statsNow;
+                    statsFrameCount = 0;
+                }
+            }
+
+            glBindVertexArray(0);
+            glUseProgram(0);
+
+            glDeleteBuffers(1, &elementBufferObject);
+            glDeleteBuffers(1, &vertexBufferObject);
+            glDeleteVertexArrays(1, &vertexArrayObject);
+
+            exitCode = 0;
+        } // if 结束，texture 在这里析构
     }
 
-    //===========================================================11
-    std::cout << "===  Hazel 100,000 个实体的移动更新性能测试 ===\n\n";
+    SDL_GL_DeleteContext(openGLContext);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 
-    constexpr size_t ENTITY_COUNT = 100000;
-    constexpr size_t TOTAL_FRAMES = 1000;
-    constexpr float DELTA_TIME = 0.016f;
-
-    Hazel::MovementSystemDOD movementSystem;
-    movementSystem.Reserve(ENTITY_COUNT);
-
-    Hazel::Timer timer;
-
-    // 运行 1000 帧更新
-    for (size_t frame = 0; frame < TOTAL_FRAMES; ++frame) {
-        movementSystem.Update(DELTA_TIME);
-    }
-
-    float totalMs = timer.ElapsedMilliseconds();
-    float avgFrameMs = totalMs / TOTAL_FRAMES;
-    float totalOps = ENTITY_COUNT * TOTAL_FRAMES;
-
-    std::cout << "最优架构测试结果 (100,000 Entities x 1000 Frames):\n";
-    std::cout << "  - 总运行耗时 : " << totalMs << " ms\n";
-    std::cout << "  - 单帧平均耗时: " << std::fixed << std::setprecision(4) << avgFrameMs << " ms\n";
-    std::cout << "  - 吞吐量     : " << static_cast<size_t>(totalOps / (totalMs / 1000.0f)) << " updates/sec\n";
-    std::cout << "========================================================\n";
-
-
-    return 0;
+    return exitCode;
 }
