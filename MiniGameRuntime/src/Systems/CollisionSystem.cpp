@@ -1,4 +1,3 @@
-#include <iostream>
 #include <vector>
 #include "Systems/CollisionSystem.h"
 #include "Physics/PhysicsUtils.h"
@@ -30,8 +29,6 @@ void CollisionSystem::Update(World& world) {
 			Entity entityB = targets[j];
 
 			if (Overlaps(world, entityA, entityB)) {
-				std::cout << "[CollisionSystem] Detected! Entity [" << entityA
-					<< "] collided with Entity [" << entityB << "]" << std::endl;
 				CollisionEvent newEvent;
 				newEvent.a = entityA;
 				newEvent.b = entityB;
