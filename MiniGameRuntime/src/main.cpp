@@ -850,8 +850,17 @@ void main()
                 if (!isPaused) {
                     playerControlSystem.Update(scene.world, scene.player, input.playerDirection, moveSpeed);
 
+                    Vec2 previousPlayerPosition{};
+                    if (scene.world.HasTransform(scene.player)) {
+                        previousPlayerPosition = scene.world.GetTransform(scene.player).position;
+                    }
+
                     movementSystem.Update(scene.world, deltaTime);
                     collisionSystem.Update(scene.world);
+
+                    if (collisionSystem.Overlaps(scene.world, scene.player, scene.wall)) {
+                        scene.world.GetTransform(scene.player).position = previousPlayerPosition;
+                    }
 
                     camera.position.x += input.cameraDirection.x * cameraSpeed * deltaTime;
                     camera.position.y += input.cameraDirection.y * cameraSpeed * deltaTime;
@@ -895,8 +904,9 @@ void main()
                 //if (keyboardState[SDL_SCANCODE_RIGHT]) {
                 //    camera.position.x += cameraSpeed * deltaTime;
                 //}
-                camera.position.x += input.cameraDirection.x * cameraSpeed * deltaTime;
-                camera.position.y += input.cameraDirection.y * cameraSpeed * deltaTime;
+
+                //camera.position.x += input.cameraDirection.x * cameraSpeed * deltaTime;
+                //camera.position.y += input.cameraDirection.y * cameraSpeed * deltaTime;
 
                 // 指定OpenGL清屏颜色 OpenGL颜色范围是：0.0 ～ 1.0  红、绿、蓝、透明度
                 glClearColor(

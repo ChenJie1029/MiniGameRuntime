@@ -4,6 +4,14 @@
 #include "Physics/PhysicsUtils.h"
 #include "Core/EventBus.h"
 
+bool CollisionSystem::Overlaps(World& world, Entity a, Entity b) const {
+	if (!world.HasTransform(a) || !world.HasAABB(a) || !world.HasTransform(b) || !world.HasAABB(b)) { // 检查位置和碰撞盒
+		return false;
+	}
+
+	return PhysicsUtils::CheckAABBCollision(world.GetTransform(a).position, world.GetAABB(a).halfExtents, world.GetTransform(b).position, world.GetAABB(b).halfExtents);
+}
+
 void CollisionSystem::Update(World& world) {
 	// 自动化筛选：建立一个临时名单，把世界上所有同时有物理肉身(Transform)和碰撞体(AABB)的实体抓出
 	std::vector<Entity> targets;
@@ -21,13 +29,7 @@ void CollisionSystem::Update(World& world) {
 			Entity entityA = targets[i];
 			Entity entityB = targets[j];
 
-			const Vec2& posA = world.GetTransform(entityA).position;
-			const Vec2& halfA = world.GetAABB(entityA).halfExtents;
-
-			const Vec2& posB = world.GetTransform(entityB).position;
-			const Vec2& halfB = world.GetAABB(entityB).halfExtents;
-
-			if (PhysicsUtils::CheckAABBCollision(posA, halfA, posB, halfB)) {
+			if (Overlaps(world, entityA, entityB)) {
 				std::cout << "[CollisionSystem] Detected! Entity [" << entityA
 					<< "] collided with Entity [" << entityB << "]" << std::endl;
 				CollisionEvent newEvent;
